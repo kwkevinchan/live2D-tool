@@ -28,12 +28,12 @@ main(hero, series)
 
 | 編號 | 包 | 內容 |
 |---|---|---|
-| 1 | `face` 臉部 | 臉、五官、眼白、虹膜、睫毛、眉毛、耳朵、脖子、帽子（含 `headwear-front`）、臉部飾品、`leftover` 脖子以上的部分 |
+| 1 | `face` 臉部 | 臉、五官、眼白、虹膜、睫毛、眉毛、耳朵、脖子、帽子（含 `headwear-front`）、眼鏡 `eyewear`、耳飾 `earwear`、`ribbon`、`earring`、`leftover` 脖子以上的部分 |
 | 2 | `hair` 頭髮 | 前髮、後髮、側髮，以及切出來的 `side_lock`、`hair_ends`、`ponytail`、`ahoge`、`bangs` |
-| 3 | `clothes` 軀幹與衣物 | 上衣、下著、`hidden`、`hidden-pelvis`、`chest`、`cape`、`sleeve` |
+| 3 | `clothes` 軀幹與衣物 | 上衣、下著、領飾 `neckwear`、`hidden`、`hidden-pelvis`、`chest`、`cape`、`sleeve` |
 | 4 | `limbs` 四肢 | 上臂、前臂、手、大腿、小腿、腳掌、整條手臂（`handwear-*`）、襪子、鞋子 |
 | 5 | `weapon` 武器 | `objects`、`objects-back`、`tassel` |
-| 6 | `other` 其他 | `leftover` 脖子以下的部分、`quiver`，以及不認得的層 |
+| 6 | `other` 其他 | `leftover` 脖子以下的部分、`quiver`、尾巴 `tail`、翅膀 `wings`，以及不認得的層 |
 
 分類、必有、成對都讀共用的名字表 `Tools/art/part_names.py`（`pack_of`、`required`、`pairs`）：完全相同的名字優先，其次是最長的前綴，都不是就歸「其他」。新增一種圖層只改那張表。`leftover` 以 `fig_joints.json` 的脖子高度切成兩半，上半歸臉部。
 
