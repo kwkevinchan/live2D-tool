@@ -16,6 +16,7 @@ Mage-Flow-Edit-Turbo (Microsoft, 4B, 4 steps) through ComfyUI's native nodes; ne
 import argparse
 import os
 import sys
+import time
 import uuid
 
 import numpy as np
@@ -28,6 +29,14 @@ from inx_rig import WORK   # noqa: E402
 UNET = "mage_flow_edit_turbo_int8_convrot.safetensors"
 CLIP = "qwen3vl_4b_fp8_scaled.safetensors"
 VAE = "mage_flow_vae_bf16.safetensors"
+# --engine qwen: Qwen-Image-Edit-2511 (ComfyUI template image_qwen_image_edit_2511; a .gguf model needs ComfyUI-GGUF)
+QWEN_UNET = os.environ.get("QWEN_UNET", "qwen-image-edit-2511-Q4_K_M.gguf")
+QWEN_CLIP = "qwen_2.5_vl_7b_fp8_scaled.safetensors"
+QWEN_VAE = "qwen_image_vae.safetensors"
+QWEN_LORA = "Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors"   # 4 steps (--fast)
+# --engine gemini: Google AI Studio (GOOGLE_API_KEY, or the repo's .env, never committed); picture output needs a
+# billed project (the free tier's image quota is 0, 2026-10-02)
+GEMINI_MODEL = os.environ.get("GEMINI_IMAGE_MODEL", "gemini-2.5-flash-image")
 
 
 def graph(instr, neg, seed, refs, w, h, steps=4, cfg=1.0):
@@ -52,6 +61,79 @@ def graph(instr, neg, seed, refs, w, h, steps=4, cfg=1.0):
     return g
 
 
+def graph_qwen(instr, neg, seed, refs, fast=False):
+    """the ComfyUI template image_qwen_image_edit_2511 flattened: the first reference scaled to the model's size and
+    encoded as the start latent, every reference (up to 3) given to the text encoder; 40 steps at cfg 4, or 4 steps
+    at cfg 1 with the Lightning LoRA (fast)"""
+    def n(cls, **inp):
+        return {"class_type": cls, "inputs": inp}
+    g = {"1": n("UnetLoaderGGUF", unet_name=QWEN_UNET) if QWEN_UNET.endswith(".gguf")
+         else n("UNETLoader", unet_name=QWEN_UNET, weight_dtype="default"),
+         "2": n("CLIPLoader", clip_name=QWEN_CLIP, type="qwen_image", device="default"),
+         "3": n("VAELoader", vae_name=QWEN_VAE),
+         "4": n("ModelSamplingAuraFlow", model=["1", 0], shift=3.1),
+         "5": n("CFGNorm", model=["4", 0], strength=1.0)}
+    model = ["5", 0]
+    if fast:
+        g["6"] = n("LoraLoaderModelOnly", model=model, lora_name=QWEN_LORA, strength_model=1.0)
+        model = ["6", 0]
+    for i, name in enumerate(refs[:3], 1):
+        g["2%d" % i] = n("LoadImage", image=name)
+    g["30"] = n("FluxKontextImageScale", image=["21", 0])
+    imgs = {"image1": ["30", 0]}
+    imgs.update({"image%d" % i: ["2%d" % i, 0] for i in range(2, min(3, len(refs)) + 1)})
+    g["31"] = n("TextEncodeQwenImageEditPlus", clip=["2", 0], vae=["3", 0], prompt=instr, **imgs)
+    g["32"] = n("TextEncodeQwenImageEditPlus", clip=["2", 0], vae=["3", 0], prompt=neg, **imgs)
+    g["33"] = n("FluxKontextMultiReferenceLatentMethod", conditioning=["31", 0], reference_latents_method="index_timestep_zero")
+    g["34"] = n("FluxKontextMultiReferenceLatentMethod", conditioning=["32", 0], reference_latents_method="index_timestep_zero")
+    g["35"] = n("VAEEncode", pixels=["30", 0], vae=["3", 0])
+    g["36"] = n("KSampler", model=model, positive=["33", 0], negative=["34", 0], latent_image=["35", 0], seed=seed,
+                steps=4 if fast else 40, cfg=1.0 if fast else 4.0, sampler_name="euler", scheduler="simple", denoise=1.0)
+    g["37"] = n("VAEDecode", samples=["36", 0], vae=["3", 0])
+    g["38"] = n("SaveImage", images=["37", 0], filename_prefix="objedit_qwen")
+    return g
+
+
+def gemini_key():
+    k = os.environ.get("GOOGLE_API_KEY")
+    if not k:
+        env = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".env")
+        if os.path.exists(env):
+            k = next((l.split("=", 1)[1].strip() for l in open(env) if l.startswith("GOOGLE_API_KEY=")), None)
+    if not k:
+        raise SystemExit("no GOOGLE_API_KEY (environment or .env)")
+    return k
+
+
+def run_gemini(instr, images):
+    """one picture from Google's image model: the instruction and the reference pictures in, a picture out"""
+    import base64
+    import io
+    import json
+    import urllib.error
+    import urllib.request
+    parts = []
+    for im in images:
+        buf = io.BytesIO()
+        im.save(buf, "PNG")
+        parts.append({"inlineData": {"mimeType": "image/png", "data": base64.b64encode(buf.getvalue()).decode()}})
+    parts.append({"text": instr})
+    body = {"contents": [{"parts": parts}], "generationConfig": {"responseModalities": ["IMAGE", "TEXT"]}}
+    req = urllib.request.Request("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent" % GEMINI_MODEL,
+                                 data=json.dumps(body).encode(),
+                                 headers={"Content-Type": "application/json", "x-goog-api-key": gemini_key()})
+    try:
+        r = json.loads(urllib.request.urlopen(req, timeout=300).read())
+    except urllib.error.HTTPError as e:
+        msg = json.loads(e.read()).get("error", {}).get("message", "")
+        raise SystemExit("Gemini %d: %s" % (e.code, msg.splitlines()[0] if msg else ""))
+    for c in r.get("candidates", []):
+        for p in c.get("content", {}).get("parts", []):
+            if "inlineData" in p:
+                return Image.open(io.BytesIO(base64.b64decode(p["inlineData"]["data"]))).convert("RGB")
+    raise SystemExit("Gemini gave no picture: %s" % str(r)[:300])
+
+
 def unwhite(rgb):
     """alpha: off where the colour is near white and joined to the border"""
     white = rgb.min(-1) > 235
@@ -72,8 +154,12 @@ def main():
     ap.add_argument("--src", default="current", choices=["current", "orig"])
     ap.add_argument("--pad", type=float, default=0.25)
     ap.add_argument("--extra", default="", help="more reference pictures (another view angle), comma separated")
-    ap.add_argument("--tag", default="e", help="file tag: st/gen/<part>_<tag><seed>.png")
+    ap.add_argument("--tag", default="", help="file tag: st/gen/<part>_<tag><seed>.png (default e / q / qf / g by engine)")
+    ap.add_argument("--engine", default="mage", choices=["mage", "qwen", "gemini"],
+                    help="mage: Mage-Flow-Edit-Turbo (local); qwen: Qwen-Image-Edit-2511 (local); gemini: Google (cloud)")
+    ap.add_argument("--fast", action="store_true", help="--engine qwen: 4 steps with the Lightning LoRA")
     a = ap.parse_args()
+    a.tag = a.tag or {"mage": "e", "qwen": "qf" if a.fast else "q", "gemini": "g"}[a.engine]
     ld = os.path.join(WORK, "live", a.hero, a.series)
     st = os.path.join(ld, "st")
     gd = os.path.join(st, "gen")
@@ -101,15 +187,23 @@ def main():
     import heroine_j3 as j3
     tmp = os.path.join(os.environ.get("TEMP", "."), "oe_%s" % uuid.uuid4().hex)
     names = []
-    ref.resize((W, H), Image.LANCZOS).save(tmp + "_0.png")
-    names.append(cg.upload(tmp + "_0.png"))
-    for i, e in enumerate([q for q in a.extra.split(",") if q], 1):
-        Image.open(e).convert("RGB").save(tmp + "_%d.png" % i)
-        names.append(cg.upload(tmp + "_%d.png" % i))
+    pics = [ref.resize((W, H), Image.LANCZOS)] + [Image.open(e).convert("RGB") for e in a.extra.split(",") if e]
+    if a.engine != "gemini":
+        for i, im in enumerate(pics):
+            im.save(tmp + "_%d.png" % i)
+            names.append(cg.upload(tmp + "_%d.png" % i))
     os.environ.pop("ART_LORA", None)   # comfy_gen adds an SDXL LoRA when this is set: not for this model
     tiles = [(ref, "reference")]
     for sd in [int(s) for s in a.seeds.split(",") if s]:
-        out = j3.run_wf(graph(a.instr, a.neg, sd, names, W, H)).resize((w, h), Image.LANCZOS)
+        t0 = time.time()
+        if a.engine == "mage":
+            out = j3.run_wf(graph(a.instr, a.neg, sd, names, W, H))
+        elif a.engine == "qwen":
+            out = j3.run_wf(graph_qwen(a.instr, a.neg, sd, names, a.fast))
+        else:   # the cloud model takes no seed: each call is simply another try
+            out = run_gemini(a.instr, pics)
+        out = out.resize((w, h), Image.LANCZOS)
+        print("seed %d: %.0f s" % (sd, time.time() - t0), flush=True)
         rgb = np.asarray(out).astype(int)
         alpha = unwhite(rgb)
         res = np.zeros((full.height, full.width, 4), np.uint8)
