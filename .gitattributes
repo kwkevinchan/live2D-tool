@@ -1,0 +1,2 @@
+# Normalize EOL for all files that Git considers text files (same as towerD).
+* text=auto eol=lf
