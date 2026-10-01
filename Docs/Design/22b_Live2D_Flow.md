@@ -16,7 +16,7 @@
 ## 甲、一張立繪的流程（穩定流程）
 
 ```
-0 選一張立繪 [L0] ─→ 找骨架 [L1] ─→ 1 拆圖層 [L2] ─→ 1b 切零件、補完整 [L3]
+0 使用者選定立繪 ─→ 找骨架 [L1] ─→ 1 拆圖層 [L2] ─→ 1b 切零件、補完整 [L3]
   ─→ 2 分成六包：部件檢查 [L4]、組裝檢查 [L6]
        └ 有問題的物件 → 物件迴圈：輪廓 [L5a] → 上色或重畫的候選 [L5b] → 換上後再看 [L5c] → 回到 2
   ─→ 3 嘴型差分 [L7] ─→ 4 自動綁定 ─→ 5 跟原圖比、動態截圖 [L8]
@@ -51,7 +51,6 @@ Live 2D 工作室（`Tools/live2d_studio/app.py`，`http://127.0.0.1:7861`）每
 
 | 檢查點 | 時間點 | 看哪張圖 | 看什麼 | 沒通過怎麼辦 |
 |---|---|---|---|---|
-| **L0** 立繪 | 選好立繪、開始拆之前 | `full.png`（關鍵姿勢另看 `review_plate.py cand` 的候選表） | 全身在畫面裡；底色乾淨；手腳和手指的數量對；沒有畫上特效 | 換一張候選，或退回美術工具箱重畫 |
 | **L1** 骨架 | `live_layers.py parts` 之後 | `fig_overview.png`（彩色部位＋關節點） | 每個關節點在對的位置（盔甲下的手腕常抓錯）；握點在拿武器的那隻手；臉的位置對 | 手動改 `fig_joints.json`（原本的另存一份），再往下做 |
 | **L2** 拆圖層 | `see_through.py` 之後 | `st/_stack_vs_plate.jpg`、印出的圖層清單；關鍵姿勢另看 `review_plate.py` 的 `review.jpg` | 有臉；兩隻眼睛分開；沒有發明出來的層（翅膀、多一頂帽子）；長髮沒有被丟進雜物；武器、帽子有被認出來 | `object_fix --make-face`／`--split-lr`／`--drop-part`／`--sort-hair`；整張拆壞就換種子重拆 |
 | **L3** 切零件 | `rig_parts.py` 之後，先跑一次 `split_groups.py` | `parts_4.jpg`（四肢）、`parts_5.jpg`（武器）、`parts_3.jpg` 裡的 `hidden` | 手臂、腿在關節處切開，每段像它的名字；武器是完整的一根、沒有夾帶別的東西；`hidden` 補畫的地方沒有手臂殘影、灰色糊塊 | 改 `fig_joints.json` 的關節或 `--weapon` 描點後重切；`hidden` 用 `object_fix --grow grey` |
@@ -71,13 +70,6 @@ Live 2D 工作室（`Tools/live2d_studio/app.py`，`http://127.0.0.1:7861`）每
 ### 各檢查點的注意重點
 
 從 [../LessonsLearned.md](../LessonsLearned.md) 整理：過去在這一步漏看、看錯過的地方。括號是出處（LessonsLearned 的節，或程式裡記下的事件）。所有檢查點共通的：先看物件再看組裝（原則 1）、不拿像不像原圖當標準（原則 2）、試兩三次不行就交給使用者（原則 9）、說時間前先看時鐘（二）。
-
-**L0 立繪、關鍵姿勢候選**
-- 多一把武器、多一條腿、多一隻手、武器浮在空中（`key_poses.py` 的排除詞、`review_plate.py`）。
-- 畫了火、魔法陣、冰晶這類特效：遊戲會自己畫特效，畫在立繪上的會被拆成奇怪的零件（`key_poses.py` 的 `NO_FX`）。
-- 腳底以下還有東西（杖尖、裙襬拖地）：切換姿勢時會被墊高（`review_plate.py`）。
-- 武器和身體圍住的背景有沒有去乾淨（`clear_background`）。
-- 舉過頭的姿勢、橫掃的姿勢常不照骨架畫，衣服也可能跟主設計不一樣（雪乃的褲裙畫成開衩）。
 
 **L1 骨架**
 - 盔甲、寬袖底下的手腕常抓錯或抓不到，手肘、手腕可能跑到肩膀上（四）。
@@ -187,7 +179,7 @@ Live 2D 工作室（`Tools/live2d_studio/app.py`，`http://127.0.0.1:7861`）每
 
 - 一位角色的一套造型：主設計在 `Assets/Heroines/<hero>/full.png`，造型在 `Assets/Heroines/<hero>/skins/<series>/full.png`（連同 `full_blink.png` 閉眼圖）。
 - 這張立繪的工作資料夾是 `art_work/live/<hero>/<series>/`（主設計的 `<series>` 是 `-`），之後每一步的產出都放這裡。
-- **LLM 檢查 L0**（立繪本身）；找骨架（`live_layers.py parts`）之後 **L1**。
+- 立繪由使用者選定，LLM 直接接收、不另外審。找骨架（`live_layers.py parts`）之後是第一個檢查點 **L1**。
 - 工作室：「資料夾」選英雄和資料夾；「總覽」看每張立繪做到哪一步。
 
 ### 1. 拆圖層
@@ -536,7 +528,7 @@ A 字站姿立繪 ─→ See Through 拆層 ─→ 分零件（rig_parts）─�
 另外每位都有 `idle`（待機）、`ready`（預備）。
 
 1. **候選**：`key_poses.py cand <hero> <action>`。每個姿勢在程式裡畫 OpenPose 骨架（`POSES`），接 xinsir openpose ControlNet ＋ 角色專屬微調（強度 1.0）＋ 她的服裝標籤，每個姿勢出 8 張，放在 `art_work/poses/<hero>/<action>/`。骨架統一**軀幹長度和腳底位置**（不要用臉的大小對齊，側臉會量小）。
-2. **審圖、你挑**：`review_plate.py cand <hero> <action>` 產生候選的審圖表（警告同第 2 步）。**LLM 檢查 L0**：逐張看候選，剔掉畫錯的（多手多腳、多一把武器、沒照骨架、畫了特效），每個姿勢推薦一兩張給你挑。挑好後 `key_poses.py pick <hero> <action> <pose>=<seed> ...`：去背（`clear_background` 會清掉武器和身體圍起來的背景）並用局部重繪做閉眼圖，放進 `pose_<pose>/`。
+2. **審圖、你挑**：`review_plate.py cand <hero> <action>` 產生候選的審圖表（警告同第 2 步）。挑哪一張由使用者決定。挑好後 `key_poses.py pick <hero> <action> <pose>=<seed> ...`：去背（`clear_background` 會清掉武器和身體圍起來的背景）並用局部重繪做閉眼圖，放進 `pose_<pose>/`。
 3. **你的審核**：選用的姿勢走完第 1～2 步後，在美術工具箱「待審核」按「可以／不行」（不行要寫原因）。決定存在 `art_work/review_decisions.json`，鍵是 `pose:<hero>:<pose>`。**這個檔案是使用者的，不要刪、不要蓋掉。** 已交給綁定的姿勢記在 `art_work/delivered.json`。
 4. **每張姿勢再走甲的 1～6**。
 

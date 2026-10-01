@@ -22,7 +22,7 @@
 
 | 步驟 | 程式 | 要 ComfyUI | 產出（都在 `<work>/live/<角色>/<服裝>/`） | LLM 檢查 |
 |---|---|---|---|---|
-| 0. 選立繪 | （設定檔 `live2d.toml` 的 `plates`） | | | L0 |
+| 0. 選立繪 | （使用者選定；設定檔 `live2d.toml` 的 `plates`） | | | （不審） |
 | 找骨架 | `live_layers.py parts` | 要 | `fig_joints.json`、`fig_*.png`（粗分層）、`layer_*.png` | L1 |
 | 1. 拆圖層 | `see_through.py` | 要 | `st/part_*.png`、`st/parts.json`、`st/st_layers.json` | L2 |
 | 1b. 切零件 | `rig_parts.py` | 要（補畫身體底下、武器被擋住的部分） | 手臂、腿分段，武器補完整，`parts.json` 的 `pivots` | L3 |
