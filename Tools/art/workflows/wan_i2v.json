@@ -1,0 +1,163 @@
+{
+ "1": {
+  "class_type": "UNETLoader",
+  "inputs": {
+   "unet_name": "wan2.2_ti2v_5B_fp16.safetensors",
+   "weight_dtype": "default"
+  },
+  "_meta": {
+   "title": "影片模型"
+  }
+ },
+ "2": {
+  "class_type": "ModelSamplingSD3",
+  "inputs": {
+   "model": [
+    "1",
+    0
+   ],
+   "shift": 8.0
+  },
+  "_meta": {
+   "title": "取樣偏移"
+  }
+ },
+ "3": {
+  "class_type": "CLIPLoader",
+  "inputs": {
+   "clip_name": "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+   "type": "wan"
+  },
+  "_meta": {
+   "title": "文字編碼"
+  }
+ },
+ "4": {
+  "class_type": "VAELoader",
+  "inputs": {
+   "vae_name": "wan2.2_vae.safetensors"
+  },
+  "_meta": {
+   "title": "解碼器"
+  }
+ },
+ "5": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": ""
+  },
+  "_meta": {
+   "title": "輸入圖"
+  }
+ },
+ "6": {
+  "class_type": "Wan22ImageToVideoLatent",
+  "inputs": {
+   "vae": [
+    "4",
+    0
+   ],
+   "width": 832,
+   "height": 480,
+   "length": 73,
+   "batch_size": 1,
+   "start_image": [
+    "5",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "影片畫布"
+  }
+ },
+ "7": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "clip": [
+    "3",
+    0
+   ],
+   "text": ""
+  },
+  "_meta": {
+   "title": "正面提示詞"
+  }
+ },
+ "8": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "clip": [
+    "3",
+    0
+   ],
+   "text": ""
+  },
+  "_meta": {
+   "title": "排除詞"
+  }
+ },
+ "9": {
+  "class_type": "KSampler",
+  "inputs": {
+   "model": [
+    "2",
+    0
+   ],
+   "positive": [
+    "7",
+    0
+   ],
+   "negative": [
+    "8",
+    0
+   ],
+   "latent_image": [
+    "6",
+    0
+   ],
+   "seed": 1,
+   "steps": 20,
+   "cfg": 5.0,
+   "sampler_name": "uni_pc",
+   "scheduler": "simple",
+   "denoise": 1.0
+  },
+  "_meta": {
+   "title": "採樣"
+  }
+ },
+ "10": {
+  "class_type": "VAEDecode",
+  "inputs": {
+   "samples": [
+    "9",
+    0
+   ],
+   "vae": [
+    "4",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "解碼"
+  }
+ },
+ "11": {
+  "class_type": "VHS_VideoCombine",
+  "inputs": {
+   "images": [
+    "10",
+    0
+   ],
+   "frame_rate": 24,
+   "loop_count": 0,
+   "filename_prefix": "anim",
+   "format": "video/h264-mp4",
+   "pingpong": false,
+   "save_output": true
+  },
+  "_meta": {
+   "title": "存影片"
+  }
+ }
+}

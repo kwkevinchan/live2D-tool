@@ -1,0 +1,160 @@
+{
+ "1": {
+  "class_type": "CheckpointLoaderSimple",
+  "inputs": {
+   "ckpt_name": "autismmixSDXL_autismmixPony.safetensors"
+  },
+  "_meta": {
+   "title": "模型"
+  }
+ },
+ "2": {
+  "class_type": "CLIPSetLastLayer",
+  "inputs": {
+   "clip": [
+    "1",
+    1
+   ],
+   "stop_at_clip_layer": -2
+  },
+  "_meta": {
+   "title": "CLIP 跳層"
+  }
+ },
+ "3": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "clip": [
+    "2",
+    0
+   ],
+   "text": ""
+  },
+  "_meta": {
+   "title": "正面提示詞"
+  }
+ },
+ "4": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "clip": [
+    "2",
+    0
+   ],
+   "text": ""
+  },
+  "_meta": {
+   "title": "排除詞"
+  }
+ },
+ "5": {
+  "class_type": "VAEEncode",
+  "inputs": {
+   "pixels": [
+    "9",
+    0
+   ],
+   "vae": [
+    "1",
+    2
+   ]
+  },
+  "_meta": {
+   "title": "編碼"
+  }
+ },
+ "6": {
+  "class_type": "KSampler",
+  "inputs": {
+   "model": [
+    "1",
+    0
+   ],
+   "positive": [
+    "3",
+    0
+   ],
+   "negative": [
+    "4",
+    0
+   ],
+   "latent_image": [
+    "11",
+    0
+   ],
+   "seed": 1,
+   "steps": 30,
+   "cfg": 6.0,
+   "sampler_name": "dpmpp_2m",
+   "scheduler": "karras",
+   "denoise": 0.5
+  },
+  "_meta": {
+   "title": "採樣"
+  }
+ },
+ "7": {
+  "class_type": "VAEDecode",
+  "inputs": {
+   "samples": [
+    "6",
+    0
+   ],
+   "vae": [
+    "1",
+    2
+   ]
+  },
+  "_meta": {
+   "title": "解碼"
+  }
+ },
+ "8": {
+  "class_type": "SaveImage",
+  "inputs": {
+   "images": [
+    "7",
+    0
+   ],
+   "filename_prefix": "art"
+  },
+  "_meta": {
+   "title": "存圖"
+  }
+ },
+ "9": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": ""
+  },
+  "_meta": {
+   "title": "輸入圖"
+  }
+ },
+ "10": {
+  "class_type": "LoadImageMask",
+  "inputs": {
+   "image": "",
+   "channel": "red"
+  },
+  "_meta": {
+   "title": "遮罩"
+  }
+ },
+ "11": {
+  "class_type": "SetLatentNoiseMask",
+  "inputs": {
+   "samples": [
+    "5",
+    0
+   ],
+   "mask": [
+    "10",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "只重畫遮罩"
+  }
+ }
+}

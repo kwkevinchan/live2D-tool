@@ -1,0 +1,67 @@
+{
+ "1": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": ""
+  },
+  "_meta": {
+   "title": "輸入圖"
+  }
+ },
+ "2": {
+  "class_type": "DownloadAndLoadSAM2Model",
+  "inputs": {
+   "model": "sam2.1_hiera_large.safetensors",
+   "segmentor": "single_image",
+   "device": "cuda",
+   "precision": "fp16"
+  },
+  "_meta": {
+   "title": "SAM2 模型"
+  }
+ },
+ "3": {
+  "class_type": "Sam2Segmentation",
+  "inputs": {
+   "sam2_model": [
+    "2",
+    0
+   ],
+   "image": [
+    "1",
+    0
+   ],
+   "keep_model_loaded": false,
+   "coordinates_positive": "[]",
+   "coordinates_negative": "[]"
+  },
+  "_meta": {
+   "title": "分割"
+  }
+ },
+ "4": {
+  "class_type": "MaskToImage",
+  "inputs": {
+   "mask": [
+    "3",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "遮罩轉圖"
+  }
+ },
+ "8": {
+  "class_type": "SaveImage",
+  "inputs": {
+   "images": [
+    "4",
+    0
+   ],
+   "filename_prefix": "art_mask"
+  },
+  "_meta": {
+   "title": "存圖"
+  }
+ }
+}

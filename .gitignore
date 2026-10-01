@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.pyc
+# Godot
+.godot/
+*.import
+# work data (plates, splits, rigs, renders) lives outside the repo (ART_WORK, default C:\Users\kwkev\Tool\art_work)
+art_work/
+*.inx
+# never: keys, passwords, signing files
+*.keystore
+.env

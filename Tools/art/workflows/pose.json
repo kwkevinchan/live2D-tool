@@ -1,0 +1,43 @@
+{
+ "1": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": ""
+  },
+  "_meta": {
+   "title": "輸入圖"
+  }
+ },
+ "2": {
+  "class_type": "DWPreprocessor",
+  "inputs": {
+   "image": [
+    "1",
+    0
+   ],
+   "detect_hand": "disable",
+   "detect_body": "enable",
+   "detect_face": "disable",
+   "resolution": 1024,
+   "bbox_detector": "yolox_l.onnx",
+   "pose_estimator": "dw-ll_ucoco_384_bs5.torchscript.pt",
+   "scale_stick_for_xinsr_cn": "disable"
+  },
+  "_meta": {
+   "title": "骨架"
+  }
+ },
+ "3": {
+  "class_type": "SavePoseKpsAsJsonFile",
+  "inputs": {
+   "pose_kps": [
+    "2",
+    1
+   ],
+   "filename_prefix": "art_pose"
+  },
+  "_meta": {
+   "title": "存關節"
+  }
+ }
+}

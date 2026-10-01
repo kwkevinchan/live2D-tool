@@ -1,0 +1,38 @@
+{
+ "1": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": ""
+  },
+  "_meta": {
+   "title": "輸入圖"
+  }
+ },
+ "2": {
+  "class_type": "LineArtPreprocessor",
+  "inputs": {
+   "image": [
+    "1",
+    0
+   ],
+   "coarse": "disable",
+   "resolution": 1024
+  },
+  "_meta": {
+   "title": "抽線"
+  }
+ },
+ "3": {
+  "class_type": "SaveImage",
+  "inputs": {
+   "images": [
+    "2",
+    0
+   ],
+   "filename_prefix": "lineart"
+  },
+  "_meta": {
+   "title": "存圖"
+  }
+ }
+}

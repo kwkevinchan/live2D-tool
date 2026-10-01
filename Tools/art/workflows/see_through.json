@@ -1,0 +1,103 @@
+{
+ "1": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": ""
+  },
+  "_meta": {
+   "title": "輸入圖"
+  }
+ },
+ "2": {
+  "class_type": "SeeThrough_LoadLayerDiffModel",
+  "inputs": {
+   "model": "seethroughv0.0.2_layerdiff3d",
+   "vae_ckpt": "",
+   "unet_ckpt": "",
+   "quant_mode": "none",
+   "cache_tag_embeds": true,
+   "group_offload": false,
+   "auto_download": false
+  },
+  "_meta": {
+   "title": "分層模型"
+  }
+ },
+ "3": {
+  "class_type": "SeeThrough_LoadDepthModel",
+  "inputs": {
+   "model": "seethroughv0.0.1_marigold",
+   "quant_mode": "none",
+   "cache_tag_embeds": true,
+   "group_offload": false,
+   "auto_download": false
+  },
+  "_meta": {
+   "title": "深度模型"
+  }
+ },
+ "4": {
+  "class_type": "SeeThrough_GenerateLayers",
+  "inputs": {
+   "image": [
+    "1",
+    0
+   ],
+   "layerdiff_model": [
+    "2",
+    0
+   ],
+   "seed": 42,
+   "resolution": 1280,
+   "num_inference_steps": 30
+  },
+  "_meta": {
+   "title": "分層"
+  }
+ },
+ "5": {
+  "class_type": "SeeThrough_GenerateDepth",
+  "inputs": {
+   "layers": [
+    "4",
+    0
+   ],
+   "depth_model": [
+    "3",
+    0
+   ],
+   "seed": 42,
+   "resolution_depth": -1
+  },
+  "_meta": {
+   "title": "深度"
+  }
+ },
+ "6": {
+  "class_type": "SeeThrough_PostProcess",
+  "inputs": {
+   "layers_depth": [
+    "5",
+    0
+   ],
+   "tblr_split": true,
+   "use_lama": true
+  },
+  "_meta": {
+   "title": "整理"
+  }
+ },
+ "7": {
+  "class_type": "SeeThrough_SavePSD",
+  "inputs": {
+   "parts": [
+    "6",
+    0
+   ],
+   "filename_prefix": "seethrough"
+  },
+  "_meta": {
+   "title": "存 PSD"
+  }
+ }
+}
