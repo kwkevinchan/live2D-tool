@@ -21,7 +21,8 @@ from scipy import ndimage
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from inx_rig import ROOT, WORK, src_dir   # noqa: E402
 
-GODOT = os.environ.get("GODOT", r"C:\Users\kwkev\Tool\Godot_v4.7.2-stable_win64\Godot_v4.7.2-stable_win64_console.exe")
+import config as _C   # live2d.toml
+GODOT = _C.GODOT
 OUT = os.path.join(WORK, "live", "check")
 COLOR_OFF = 90       # sum of RGB differences that counts as a wrong colour
 FLAG_SHARE = 0.005   # of the figure's pixels

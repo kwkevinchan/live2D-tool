@@ -13,8 +13,8 @@ each part around its joint (arms at the shoulders, legs at the hips, the head at
 shapes, breathing, hair sway, parallax and falling leaves. The real animation will be rigged in Inochi2D (Docs/Design/22);
 these parts are its source art.
 
-Reads the installed art (Assets/Heroines/<hero>[/skins/<series>]/full.png, full_blink.png, scene.jpg) and writes
-into <work>/live/<hero>/<series>/ (C:/Users/kwkev/Tool/art_work by default, ART_WORK to change it).
+Reads the plates (live2d.toml [paths] plates: <plates>/<hero>[/skins/<series>]/full.png, full_blink.png, scene.jpg) and writes
+into <work>/live/<hero>/<series>/ (live2d.toml [paths] work, or ART_WORK).
 """
 import glob
 import json
@@ -35,8 +35,9 @@ import heroine_j3 as j3     # noqa: E402
 import workflows as W       # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-WORK = os.environ.get("ART_WORK", r"C:\Users\kwkev\Tool\art_work")
-COMFY_OUT = r"C:\Users\kwkev\Tool\StabilityMatrix-win-x64\Data\Images\Text2Img"
+import config as _C   # live2d.toml
+WORK = _C.WORK
+COMFY_OUT = _C.COMFY_OUT
 GREY = (200, 200, 205)
 PARTS = ("leg_l", "leg_r", "torso", "weapon", "arm_l", "arm_r", "hair", "face")   # drawing order, back to front
 MOUTHS = {   # name: (prompt, negative) — the mouth shapes a talking animation cycles through
@@ -50,8 +51,7 @@ MOUTHS = {   # name: (prompt, negative) — the mouth shapes a talking animation
 def src_dir(hero, series):
     if series.startswith("pose_"):   # key-pose plates (Tools/art/key_poses.py) live in their own work folder
         return os.path.join(WORK, "live", hero, series)
-    return os.path.join(ROOT, "Assets", "Heroines", hero) if series in ("-", "") else \
-        os.path.join(ROOT, "Assets", "Heroines", hero, "skins", series)
+    return _C.plate_dir(hero, series)   # live2d.toml [paths] plates
 
 
 def outfit_of(series):

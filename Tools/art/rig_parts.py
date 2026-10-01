@@ -24,7 +24,8 @@ from PIL import Image
 sys.path.insert(0, os.path.dirname(__file__))
 import live_layers as L     # noqa: E402
 
-WORK = os.environ.get("ART_WORK", r"C:\Users\kwkev\Tool\art_work")
+import config as _C   # live2d.toml
+WORK = _C.WORK
 
 
 def load(folder):

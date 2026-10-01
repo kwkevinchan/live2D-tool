@@ -1,0 +1,64 @@
+# 芙蕾雅: from towerD (Tools/art/heroine_j3.py HEROES / OUTFITS, key_poses.py LORA / HOLD), 2026-10-02
+id = "freya"
+name = "芙蕾雅"
+age = 26   # adults only (twenties); written into prompts as "N years old"
+look = "red hair, long wavy hair, red eyes, mole under eye, alluring smile"
+weapon = "holding wooden staff with fire orb"   # how the plates draw it
+hold = "holding a crooked dark wooden staff with a red orb set in its curled top"   # the weapon in plain words (AI redraws of the weapon, key poses)
+lora = "freya_waiIllustriousSDXL_v170.safetensors"   # character LoRA for waiIllustriousSDXL
+trigger = "freya_tdc"
+
+[outfits."-"]
+outfit = "black witch hat with red band, black and red corset dress, deep cleavage, bare shoulders, sheer black sleeves, very high leg slit, bare thigh, gold jewelry, black high heels"
+scene = "witch tower room at night, candles, floating magic flames, bookshelves"
+scene_pose = "sitting on a velvet armchair, legs crossed, chin on hand, fire orb floating beside her"
+
+[outfits."A"]
+outfit = "off-shoulder red knit sweater, bare shoulders, black mini skirt, bare legs, ankle boots, hair down"
+scene = "cafe terrace in town, afternoon sun, flower pots"
+scene_pose = "sitting at a cafe table, legs crossed, holding tea cup, relaxed smile"
+
+[outfits."B"]
+outfit = "red yukata with goldfish pattern, loose collar, bare shoulders, short hem, bare thighs, black obi, hair up, kanzashi"
+scene = "summer festival at night, goldfish scooping stall, lanterns"
+scene_pose = "crouching by a goldfish pool, holding a paper scoop, looking up at viewer, playful smile"
+
+[outfits."C"]
+outfit = "light silver knight armor, bikini armor, cleavage, bare midriff, red cape, thigh-high armored boots, holding sword"
+scene = "castle courtyard, banners, blue sky"
+scene_pose = "sitting on castle steps, sword resting on shoulder, teasing smile"
+
+[outfits."D"]
+outfit = "red bikini, string bikini, cleavage, bare midriff, sheer black beach cover-up, sun hat, sunglasses"
+scene = "beach under a parasol, sparkling sea, beach chair, iced tea"
+scene_pose = "lying on a beach chair, one knee up, holding sunscreen bottle, inviting smile"
+
+[outfits."E"]
+outfit = "crimson red evening gown, off-shoulder, deep cleavage, bare back, high leg slit, bare thigh, long black gloves, ruby necklace"
+scene = "grand ballroom, chandeliers, dancing crowd blurred"
+scene_pose = "leaning on a pillar, hip out, hand extended to viewer, confident smile"
+
+[outfits."F"]
+outfit = "dark purple witch outfit, corrupted, purple glowing crystals, cleavage, bare midriff, torn black cape, purple flames, purple eyes glow"
+scene = "dark rift portal, purple lightning, ruins"
+scene_pose = "floating in the air, legs crossed, purple fire in palm, fierce smile"
+
+[outfits."G"]
+outfit = "black lace negligee, thin straps, cleavage, short hem, bare legs, sheer black robe slipping off shoulder"
+scene = "bedroom at night, single lamp, dark red sheets"
+scene_pose = "lying on side on a bed, head propped on hand, looking at viewer, seductive smile"
+
+[outfits."H"]
+outfit = "race queen outfit, red and black bodysuit, highleg, cleavage cutout, bare shoulders, black thigh-high boots, holding umbrella"
+scene = "race circuit, pit lane, racing car, checkered flags"
+scene_pose = "leaning back against a race car, one leg bent, umbrella on shoulder, wink"
+
+[outfits."I"]
+outfit = "short black and red furisode kimono, floral, loose collar, bare shoulders, short hem, bare thighs, holding folding fan"
+scene = "shrine at new year, torii gate, snow, red lanterns"
+scene_pose = "sitting on shrine stairs, legs crossed, fan covering mouth, sly eyes"
+
+[outfits."J"]
+outfit = "white wedding dress, strapless, sweetheart neckline, cleavage, high leg slit, bare thigh, sheer veil, red rose bouquet"
+scene = "chapel at night, candles, red roses, stained glass"
+scene_pose = "sitting on the chapel altar steps, bouquet in lap, veil over shoulder, tender smile"

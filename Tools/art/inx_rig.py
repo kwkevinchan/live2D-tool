@@ -4,7 +4,7 @@ and a starting point to refine by hand in Inochi Creator.
 
     python Tools/art/inx_rig.py <hero> <series> [out.inx]      series: an outfit ("-", "A" …) or a key-pose folder ("pose_draw")
 
-Reads the installed art (Assets/Heroines/<hero>[/skins/<series>]/full.png, full_blink.png) and the layers made by
+Reads the plates (live2d.toml [paths] plates: <plates>/<hero>[/skins/<series>]/full.png, full_blink.png) and the layers made by
 Tools/art/live_layers.py (<work>/live/<hero>/<series>/layer_{hair,face,body}.png, mouth_a.png, mouth.json).
 Writes <work>/live/<hero>/<series>/<hero>_<series>.inx unless an output path is given.
 
@@ -33,7 +33,8 @@ import numpy as np
 from PIL import Image
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-WORK = os.environ.get("ART_WORK", r"C:\Users\kwkev\Tool\art_work")
+import config as _C   # live2d.toml
+WORK = _C.WORK
 CELL = 48          # mesh grid size in pixels
 YAW_PX = 14        # how far the head moves at full yaw
 PITCH_PX = 8       # how far the head drops at a full nod
@@ -60,8 +61,7 @@ def uid():
 
 
 def src_dir(hero, series):
-    return os.path.join(ROOT, "Assets", "Heroines", hero) if series in ("-", "") else \
-        os.path.join(ROOT, "Assets", "Heroines", hero, "skins", series)
+    return _C.plate_dir(hero, series)   # live2d.toml [paths] plates
 
 
 # ------------------------------------------------------------------ building blocks

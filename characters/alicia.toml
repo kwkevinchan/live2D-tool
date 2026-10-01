@@ -1,0 +1,64 @@
+# 艾莉西亞: from towerD (Tools/art/heroine_j3.py HEROES / OUTFITS, key_poses.py LORA / HOLD), 2026-10-02
+id = "alicia"
+name = "艾莉西亞"
+age = 22   # adults only (twenties); written into prompts as "N years old"
+look = "blonde hair, long high ponytail, green hair ribbon, green eyes, confident smile"
+weapon = "(holding bow (weapon):1.3), wooden longbow, arrow quiver"   # how the plates draw it
+hold = "holding bow"   # the weapon in plain words (AI redraws of the weapon, key poses)
+lora = "alicia_waiIllustriousSDXL_v170.safetensors"   # character LoRA for waiIllustriousSDXL
+trigger = "alicia_tdc"
+
+[outfits."-"]
+outfit = "(short blue capelet:1.2) with gold trim, white strapless corset top, deep cleavage, bare shoulders, bare midriff, brown leather belt, very short green pleated miniskirt, brown gloves, brown thigh-high boots, bare thighs"
+scene = "forest clearing, sunlight through trees, mossy log"
+scene_pose = "sitting on a log, legs crossed, bow across lap, leaning forward, smile"
+
+[outfits."A"]
+outfit = "white off-shoulder crop top, bare midriff, denim short shorts, bare legs, brown ankle boots, straw hat"
+scene = "grassy meadow, white horse in background, blue sky"
+scene_pose = "sitting in the grass, leaning back on hands, knees up, relaxed smile"
+
+[outfits."B"]
+outfit = "green yukata with floral pattern, loose collar, bare shoulders, short hem, bare thighs, red obi, hair ornament, paper fan"
+scene = "summer festival at night, lanterns, fireworks in sky"
+scene_pose = "sitting on a wooden bench, holding candy apple, looking back over shoulder"
+
+[outfits."C"]
+outfit = "black witch hat, black corset dress, deep cleavage, high slit, bare thigh, sheer black sleeves, thigh-high stockings"
+scene = "witch's study, candles, bookshelves, cauldron"
+scene_pose = "sitting on a desk, legs crossed, holding spellbook, playful smile"
+
+[outfits."D"]
+outfit = "green bikini, frilled bikini, sarong, cleavage, bare midriff, bare legs, sunglasses on head"
+scene = "tropical beach, sparkling sea, palm trees, blue sky"
+scene_pose = "lying on side on a beach towel, head propped on hand, water gun beside her, wink"
+
+[outfits."E"]
+outfit = "emerald green evening gown, strapless, deep cleavage, bare back, high leg slit, bare thigh, long white gloves, gold necklace"
+scene = "moonlit palace balcony, night sky, full moon, roses"
+scene_pose = "leaning on balcony railing, looking over shoulder, hand extended to viewer"
+
+[outfits."F"]
+outfit = "dark purple armor bikini, corrupted armor, purple glowing crystals, cleavage, bare midriff, torn black cape, thigh boots, purple eyes glow"
+scene = "dark rift portal, purple lightning, ruins"
+scene_pose = "kneeling on one knee, drawing a glowing purple bow, fierce look"
+
+[outfits."G"]
+outfit = "mint green silk negligee, lace trim, thin straps, cleavage, short hem, bare legs, sheer robe falling off shoulders"
+scene = "bedroom at night, candle light, white sheets, window moonlight"
+scene_pose = "lying on a bed on her stomach, legs up behind her, chin on hands, seductive smile"
+
+[outfits."H"]
+outfit = "race queen outfit, white and green bodysuit, highleg, cleavage cutout, bare shoulders, white thigh-high boots, holding umbrella"
+scene = "race circuit, pit lane, racing car, checkered flags"
+scene_pose = "sitting on a race car hood, one leg raised, umbrella on shoulder, confident smile"
+
+[outfits."I"]
+outfit = "short furisode kimono, red and white floral, loose collar, bare shoulders, short hem, bare thighs, white tabi socks, hamaya arrow"
+scene = "shrine at new year, torii gate, snow, red lanterns"
+scene_pose = "sitting on shrine stairs, legs to one side, holding hamaya arrow, gentle smile"
+
+[outfits."J"]
+outfit = "white wedding dress, strapless, sweetheart neckline, cleavage, sheer veil, short front long back skirt, bare legs, white rose bouquet"
+scene = "chapel garden, white roses, arch, petals falling"
+scene_pose = "sitting on a garden bench, veil blowing, bouquet in lap, loving smile"

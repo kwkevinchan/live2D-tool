@@ -32,6 +32,13 @@
 | `Docs/` | 流程、研究、程式說明 |
 | `project.godot` | 只為了跑播放器和驗證場景的最小 Godot 專案（Godot 4.7.2） |
 
+## 設定
+
+- **`live2d.toml`**（專案根目錄）：工作資料夾、立繪資料夾、Godot、ComfyUI（網址、安裝位置、輸出資料夾）、繪圖模型、MV-Adapter。換電腦或換立繪來源只改這個檔。環境變數優先：`ART_WORK`、`ART_PLATES`、`COMFY_URL`、`COMFY_DIR`、`GODOT`、`ART_CKPT`（也可以用 `LIVE2D_CONFIG` 指定另一個設定檔）。
+- **`characters/<角色>.toml`**：每個角色一份：名字、年齡（一律成年）、外觀描述、武器描述、角色專屬微調（LoRA）和觸發詞、每套服裝的描述。加新角色就加一個檔案。
+- 程式從 `Tools/art/config.py` 讀這兩種檔案。
+- 立繪放在 `<plates>/<角色>/full.png`（主設計）或 `<plates>/<角色>/skins/<服裝>/full.png`；目前 `plates` 指向 towerD 的 `Assets/Heroines`。
+
 ## 外部依賴（不在版本庫裡）
 
 - **ComfyUI**（`127.0.0.1:8188`）：拆層（ComfyUI-See-through）、姿勢偵測與線稿（comfyui_controlnet_aux）、切武器（ComfyUI-segment-anything-2）、局部重畫（comfyui-inpaint-nodes）。
@@ -42,11 +49,9 @@
 
 ## 還綁著 towerD、之後要切開的地方
 
-1. **立繪從哪裡讀**：`inx_rig.py`、`live_layers.py` 從 `<專案根>/Assets/Heroines/<角色>[/skins/<服裝>]/full.png` 讀。這個專案裡沒有 `Assets/`，要先改成讀設定檔或直接給圖片路徑（暫時的做法：把 `full.png` 放進工作資料夾 `live/<角色>/<服裝>/`）。
-2. **角色設定寫在程式裡**：`key_poses.py` 的角色微調（`LORA`）和武器描述（`HOLD`）、`heroine_j3.py` 的提示詞，都是 towerD 四位英雄專用。要改成每個角色一份設定檔。
-3. **`heroine_j3.py`、`key_poses.py` 整支帶過來了**：其實只用到局部重畫、送工作、提示詞、角色微調這幾個功能，要抽成小模組。
-4. **外部路徑寫死**：ComfyUI 位址、Godot 執行檔、MV-Adapter 環境、工作資料夾。要統一放進設定檔。
-5. **待修正（22b 的檢討）**：放置工具 `--merge` 會把原圖像素貼回 AI 畫好的物件、綁定時會切掉人物輪廓外的部分、分包工具會印跟原圖的差異百分比。這些都讓結果往「像原圖」跑，要改掉。
+1. ✅ 立繪路徑、角色設定、外部路徑已改成設定檔（2026-10-02）。`plates` 目前仍指向 towerD 的立繪資料夾，換成別的資料夾只要改 `live2d.toml`。
+2. **`heroine_j3.py`、`key_poses.py` 整支帶過來了**：其實只用到局部重畫、送工作、提示詞、角色微調、動作骨架這幾個功能，要抽成小模組。
+3. **待修正（22b 的檢討）**：放置工具 `--merge` 會把原圖像素貼回 AI 畫好的物件、綁定時會切掉人物輪廓外的部分、分包工具會印跟原圖的差異百分比。這些都讓結果往「像原圖」跑，要改掉。
 
 ## 規矩
 

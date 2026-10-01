@@ -7,7 +7,7 @@ Tabs: 總覽 (every hero's folders and how far each got), 資料夾 (one plate t
 with the part and assembly checks, mouth shapes, rig, check against the plate, the character's standard motions,
 the weapon and objects on their own, then together), 狀態 (ComfyUI and the GPU). Key poses, skills and animation
 are only in the design doc for now (the owner, 2026-10-01). Long jobs run the command line tools as subprocesses and
-stream their output. The work lives outside the repo in C:/Users/kwkev/Tool/art_work; ComfyUI and the GPU are shared
+stream their output. The work lives outside the repo (live2d.toml [paths] work); ComfyUI and the GPU are shared
 with the art studio (Tools/studio, port 7860).
 """
 import glob
@@ -24,16 +24,17 @@ from PIL import Image
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 ART = os.path.join(ROOT, "Tools", "art")
 PY = sys.executable
-TOOL = r"C:\Users\kwkev\Tool"
-COMFY = os.path.join(TOOL, "StabilityMatrix-win-x64", "Data", "Packages", "ComfyUI")
-MODELS = os.path.join(TOOL, "StabilityMatrix-win-x64", "Data", "Models")
-WORK = os.path.join(TOOL, "art_work")
+sys.path.insert(0, os.path.join(ROOT, "Tools", "art"))
+import config as _C   # live2d.toml  # noqa: E402
+COMFY = _C.COMFY_DIR
+MODELS = _C.MODELS
+WORK = _C.WORK
 LIVE = os.path.join(WORK, "live")
 CHECK = os.path.join(LIVE, "check")
 PREVIEW = os.path.join(LIVE, "preview")
 ASSETS = os.path.join(ROOT, "Assets")
-SERVER = "http://127.0.0.1:8188"
-GODOT = os.environ.get("GODOT", os.path.join(TOOL, "Godot_v4.7.2-stable_win64", "Godot_v4.7.2-stable_win64_console.exe"))
+SERVER = _C.COMFY_URL
+GODOT = _C.GODOT
 DECISIONS = os.path.join(WORK, "review_decisions.json")   # shared with the art studio; Claude reads it and acts on it
 
 HERO_NAMES = {"alicia": "艾莉西亞", "freya": "芙蕾雅", "yukino": "雪乃", "rena": "蕾娜"}

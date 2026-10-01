@@ -20,11 +20,12 @@ import comfy_gen as cg      # noqa: E402
 import heroine_j3 as j3     # noqa: E402
 import workflows as W       # noqa: E402
 
-WORK = os.environ.get("ART_WORK", r"C:\Users\kwkev\Tool\art_work")
+import config as _C   # live2d.toml, characters/*.toml
+WORK = _C.WORK
 W_, H_ = 832, 1216
 SEEDS = tuple(int(x) for x in os.environ.get("POSE_SEEDS", "61,62,63,64").split(","))
-LORA = {h: "%s_waiIllustriousSDXL_v170.safetensors" % h for h in ("alicia", "freya", "yukino", "rena")}
-HOLD = {"alicia": "holding bow", "freya": "holding a crooked dark wooden staff with a red orb set in its curled top", "yukino": "holding folding fan", "rena": "holding wrench"}
+LORA = {h: c["lora"] for h, c in _C.CHARACTERS.items() if c.get("lora")}   # characters/<id>.toml
+HOLD = {h: c["hold"] for h, c in _C.CHARACTERS.items() if c.get("hold")}   # characters/<id>.toml
 # COCO-18: nose, neck, r_sho, r_elb, r_wri, l_sho, l_elb, l_wri, r_hip, r_knee, r_ank, l_hip, l_knee, l_ank,
 #          r_eye, l_eye, r_ear, l_ear  (x, y as a share of the picture; "r" is the character's right)
 _LEGS = [(0.53, 0.52), (0.57, 0.70), (0.59, 0.88), (0.45, 0.52), (0.41, 0.70), (0.38, 0.88)]

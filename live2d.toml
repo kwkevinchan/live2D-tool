@@ -1,0 +1,28 @@
+# 立繪 → Live 2D 工具包的設定（這台電腦的值）。環境變數優先：ART_WORK、ART_PLATES、COMFY_URL、COMFY_DIR、GODOT、ART_CKPT。
+# 角色資料在 characters/<角色>.toml。
+
+[paths]
+# 工具做出來的所有東西（拆層、零件、檢查圖、.inx、動作截圖），不進版本庫
+work = "C:/Users/kwkev/Tool/art_work"
+# 立繪：<plates>/<角色>/full.png（主設計）、<plates>/<角色>/skins/<服裝>/full.png；目前直接讀 towerD 的立繪
+plates = "C:/Users/kwkev/Git/towerD/Assets/Heroines"
+# Godot 4.7.2（console 版，驗證場景要開視窗）
+godot = "C:/Users/kwkev/Tool/Godot_v4.7.2-stable_win64/Godot_v4.7.2-stable_win64_console.exe"
+
+[comfyui]
+url = "http://127.0.0.1:8188"
+# 安裝位置（工作室的「啟動 ComfyUI」用）和圖片輸出資料夾（拆層從這裡讀結果）
+dir = "C:/Users/kwkev/Tool/StabilityMatrix-win-x64/Data/Packages/ComfyUI"
+output = "C:/Users/kwkev/Tool/StabilityMatrix-win-x64/Data/Images/Text2Img"
+
+[models]
+# 局部重畫、嘴型、補色用的繪圖模型（要跟立繪的畫風一樣）
+checkpoint = "waiIllustriousSDXL_v170.safetensors"
+# 模型資料夾（MV-Adapter 直接讀檔案用）
+dir = "C:/Users/kwkev/Tool/StabilityMatrix-win-x64/Data/Models"
+
+[mvadapter]
+# 多角度參考圖：自己的 Python 環境（借 ComfyUI 的 torch）、MV-Adapter 程式碼、SDXL 設定檔
+python = "C:/Users/kwkev/Tool/mvadapter-env/Scripts/python.exe"
+repo = "C:/Users/kwkev/Tool/MV-Adapter"
+configs = "C:/Users/kwkev/Tool/sdxl-config"

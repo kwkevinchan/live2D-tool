@@ -67,14 +67,14 @@ live2d-pipeline/
 
 1. ✅ 2026-10-02：複製到 `C:\Users\kwkev\Git\live2d-pipeline`（從 towerD `explore` 分支 d3b44d6c），保留跟 towerD 一樣的資料夾結構，`git init`。towerD 那邊的檔案照舊保留。
 2. ✅ 2026-10-02：帶過來文件（22、22b、22c、程式說明），補背景文件（`Docs/Background/towerD_Context.md`）、這份文件、經驗教訓（`Docs/LessonsLearned.md`）。
-3. 進行中：立繪路徑、角色設定、外部路徑改成設定檔（`live2d.toml`、`characters/<角色>.toml`）。
-4. 之後：`heroine_j3.py`、`key_poses.py` 抽成小模組；重整成 `pipeline/` 套件。
-5. 之後：Godot 播放器包成外掛，towerD 改用外掛和 `.inx`；towerD 刪掉搬走的檔案。
-6. 之後：一張範例立繪從頭跑到尾的測試。
+3. ✅ 2026-10-02：立繪路徑、角色設定、外部路徑改成設定檔（`live2d.toml`、`characters/<角色>.toml`，`Tools/art/config.py` 讀）。角色資料從 towerD 的 `heroine_j3.py`、`key_poses.py` 自動轉換，逐項比對跟原本一模一樣；預設繪圖模型改成 WAI（新立繪都用它畫）。驗證：所有程式編譯通過、芙蕾雅 C 重新綁定的節點和參數跟原本一樣、分包和武器驗證、輪廓檢查、工作室網頁、Godot 播放器測試、十個標準動作、ComfyUI 連線。
+4. ✅ 2026-10-02：放上 GitHub `git@github.com:kwkevinchan/live2D-tool.git`。
+5. 之後：`heroine_j3.py`、`key_poses.py` 抽成小模組；重整成 `pipeline/` 套件。
+6. 之後：Godot 播放器包成外掛，towerD 改用外掛和 `.inx`；towerD 刪掉搬走的檔案。
+7. 之後：一張範例立繪從頭跑到尾的測試。
 
 ### 待使用者決定
 
-- 要不要放上 GitHub（目前只在本機）。
 - towerD 用 git 子模組裝播放器外掛，還是直接複製。
 
 ## 3. 搬之前的檢討（2026-10-02）

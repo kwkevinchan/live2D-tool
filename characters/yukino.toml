@@ -1,0 +1,64 @@
+# 雪乃: from towerD (Tools/art/heroine_j3.py HEROES / OUTFITS, key_poses.py LORA / HOLD), 2026-10-02
+id = "yukino"
+name = "雪乃"
+age = 24   # adults only (twenties); written into prompts as "N years old"
+look = "silver hair, very long straight hair, blunt bangs, snowflake hair ornament, light blue eyes, gentle smile"
+weapon = "holding folding fan with snowflake pattern"   # how the plates draw it
+hold = "holding folding fan"   # the weapon in plain words (AI redraws of the weapon, key poses)
+lora = "yukino_waiIllustriousSDXL_v170.safetensors"   # character LoRA for waiIllustriousSDXL
+trigger = "yukino_tdc"
+
+[outfits."-"]
+outfit = "white and light blue miko outfit, detached wide sleeves, bare shoulders, cleavage, short blue hakama skirt, bare thighs, white thigh-high socks, zouri sandals"
+scene = "snowy shrine, torii gate, falling snow, stone lanterns"
+scene_pose = "kneeling seiza on the shrine veranda, fan in lap, gentle smile"
+
+[outfits."A"]
+outfit = "white off-shoulder blouse, light blue high-waist skirt, short skirt, bare legs, sandals, hair loose"
+scene = "flower garden, white flowers, soft sunlight"
+scene_pose = "sitting on a garden swing, legs together, hands on the ropes, shy smile"
+
+[outfits."B"]
+outfit = "white and blue yukata with snowflake pattern, loose collar, bare shoulders, short hem, bare thighs, light blue obi"
+scene = "riverside at night, fireworks in sky, lanterns"
+scene_pose = "sitting on the riverbank, legs to one side, looking up at the fireworks, soft smile"
+
+[outfits."C"]
+outfit = "mechanic outfit, unzipped jumpsuit tied at waist, white tube top, cleavage, bare midriff, bare shoulders, holding wrench, oil smudge on cheek"
+scene = "workshop, gears, tools on the wall, warm light"
+scene_pose = "sitting on a workbench, legs dangling, holding a wrench, embarrassed smile, blush"
+
+[outfits."D"]
+outfit = "white bikini, frilled bikini, cleavage, bare midriff, light blue sarong, flower in hair"
+scene = "beach shallows, gentle waves, sunset"
+scene_pose = "sitting in shallow water, legs to one side, hands on chest, shy, blush"
+
+[outfits."E"]
+outfit = "silver white evening gown, off-shoulder, cleavage, bare back, high leg slit, bare thigh, long white gloves, snowflake tiara"
+scene = "moonlit terrace, snow, night sky"
+scene_pose = "dancing pose, skirt twirling, looking over shoulder, gentle smile"
+
+[outfits."F"]
+outfit = "dark purple and black miko outfit, corrupted, purple glowing crystals, cleavage, bare shoulders, short hakama, purple eyes glow"
+scene = "dark rift portal, purple ice shards, ruins"
+scene_pose = "kneeling on one knee, fan raised, purple frost swirling, cold expression"
+
+[outfits."G"]
+outfit = "white silk slip dress, thin straps, cleavage, short hem, bare legs, hand on chest"
+scene = "japanese bedroom at night, futon, moonlight through shoji"
+scene_pose = "sitting on a futon, knees together, leaning forward, shy, heavy blush"
+
+[outfits."H"]
+outfit = "race queen outfit, ice blue and white bodysuit, highleg, cleavage cutout, bare shoulders, white thigh-high boots, holding umbrella"
+scene = "race circuit, pit lane, racing car, checkered flags"
+scene_pose = "sitting on a tire stack, knees together, umbrella held with both hands, shy smile"
+
+[outfits."I"]
+outfit = "short white and light blue furisode kimono, floral, loose collar, bare shoulders, short hem, bare thighs, white tabi socks, holding folding fan"
+scene = "shrine at new year, torii gate, heavy snow"
+scene_pose = "standing under a red umbrella in snow, fan held to chest, looking at viewer, soft smile"
+
+[outfits."J"]
+outfit = "white wedding dress, strapless, sweetheart neckline, cleavage, sheer veil, short front long back skirt, bare legs, white camellia bouquet"
+scene = "snowy garden chapel, white camellias, soft light"
+scene_pose = "sitting on a white bench, bouquet held to chest, veil flowing, teary happy smile"

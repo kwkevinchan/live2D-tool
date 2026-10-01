@@ -5,7 +5,7 @@ jtydhr88/ComfyUI-See-through). Code Apache-2.0, weights openrail++ (commercial u
 
 One picture -> about 23 RGBA layers with the hidden parts painted in (front / back hair, face, irides, eye whites,
 lashes, brows, mouth, nose, ears, neck, topwear, handwear, bottomwear, legwear, footwear, accessories, objects),
-each with a depth map, in drawing order. Input: the plate (full.png) of Assets/Heroines/<hero>[/skins/<series>] or a
+each with a depth map, in drawing order. Input: the plate (full.png) of <plates>/<hero>[/skins/<series>] (live2d.toml) or a
 key-pose folder; output: art_work/live/<hero>/<series>/st/ with st_<tag>.png, st_<tag>_depth.png, st_layers.json.
 """
 import argparse

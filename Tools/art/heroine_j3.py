@@ -37,163 +37,12 @@ NEG = ("score_4, score_5, score_6, loli, child, young girl, teen, petite, flat c
 PLATE = "full body, standing, looking at viewer, simple background, grey background, rating_questionable"
 PLATE_NEG = ", scenery, detailed background, shadow on floor, cropped legs, feet out of frame"
 
-HEROES = {
-    "alicia": {"age": 22, "look": "blonde hair, long high ponytail, green hair ribbon, green eyes, confident smile",
-               "weapon": "(holding bow (weapon):1.3), wooden longbow, arrow quiver"},
-    "freya": {"age": 26, "look": "red hair, long wavy hair, red eyes, mole under eye, alluring smile",
-              "weapon": "holding wooden staff with fire orb"},
-    "yukino": {"age": 24, "look": "silver hair, very long straight hair, blunt bangs, snowflake hair ornament, light blue eyes, "
-                       "gentle smile", "weapon": "holding folding fan with snowflake pattern"},
-    "rena": {"age": 23, "look": "(lavender hair:1.3), purple hair, high ponytail, yellow hair ribbon, goggles on head, amber eyes, grin",
-             "neg": ", blonde hair, yellow hair, orange hair",
-             "weapon": "holding giant wrench over shoulder"},
-}
+import config as _C   # characters/<id>.toml  # noqa: E402
+HEROES = {h: {k: c[k] for k in ("age", "look", "weapon", "neg") if k in c} for h, c in _C.CHARACTERS.items()}
 
 # outfit: what she wears on the plate and in the scene. scene: (background, pose) for the wardrobe picture.
-OUTFITS = {
-    "alicia": {
-        "-": ("(short blue capelet:1.2) with gold trim, white strapless corset top, deep cleavage, bare shoulders, "
-              "bare midriff, brown leather belt, very short green pleated miniskirt, brown gloves, "
-              "brown thigh-high boots, bare thighs",
-              "forest clearing, sunlight through trees, mossy log", "sitting on a log, legs crossed, bow across lap, "
-              "leaning forward, smile"),
-        "A": ("white off-shoulder crop top, bare midriff, denim short shorts, bare legs, brown ankle boots, "
-              "straw hat", "grassy meadow, white horse in background, blue sky",
-              "sitting in the grass, leaning back on hands, knees up, relaxed smile"),
-        "B": ("green yukata with floral pattern, loose collar, bare shoulders, short hem, bare thighs, "
-              "red obi, hair ornament, paper fan", "summer festival at night, lanterns, fireworks in sky",
-              "sitting on a wooden bench, holding candy apple, looking back over shoulder"),
-        "C": ("black witch hat, black corset dress, deep cleavage, high slit, bare thigh, sheer black sleeves, "
-              "thigh-high stockings", "witch's study, candles, bookshelves, cauldron",
-              "sitting on a desk, legs crossed, holding spellbook, playful smile"),
-        "D": ("green bikini, frilled bikini, sarong, cleavage, bare midriff, bare legs, sunglasses on head",
-              "tropical beach, sparkling sea, palm trees, blue sky",
-              "lying on side on a beach towel, head propped on hand, water gun beside her, wink"),
-        "E": ("emerald green evening gown, strapless, deep cleavage, bare back, high leg slit, bare thigh, "
-              "long white gloves, gold necklace", "moonlit palace balcony, night sky, full moon, roses",
-              "leaning on balcony railing, looking over shoulder, hand extended to viewer"),
-        "F": ("dark purple armor bikini, corrupted armor, purple glowing crystals, cleavage, bare midriff, "
-              "torn black cape, thigh boots, purple eyes glow", "dark rift portal, purple lightning, ruins",
-              "kneeling on one knee, drawing a glowing purple bow, fierce look"),
-        "G": ("mint green silk negligee, lace trim, thin straps, cleavage, short hem, bare legs, sheer robe "
-              "falling off shoulders", "bedroom at night, candle light, white sheets, window moonlight",
-              "lying on a bed on her stomach, legs up behind her, chin on hands, seductive smile"),
-        "H": ("race queen outfit, white and green bodysuit, highleg, cleavage cutout, bare shoulders, "
-              "white thigh-high boots, holding umbrella", "race circuit, pit lane, racing car, checkered flags",
-              "sitting on a race car hood, one leg raised, umbrella on shoulder, confident smile"),
-        "I": ("short furisode kimono, red and white floral, loose collar, bare shoulders, short hem, "
-              "bare thighs, white tabi socks, hamaya arrow", "shrine at new year, torii gate, snow, red lanterns",
-              "sitting on shrine stairs, legs to one side, holding hamaya arrow, gentle smile"),
-        "J": ("white wedding dress, strapless, sweetheart neckline, cleavage, sheer veil, short front long back "
-              "skirt, bare legs, white rose bouquet", "chapel garden, white roses, arch, petals falling",
-              "sitting on a garden bench, veil blowing, bouquet in lap, loving smile"),
-    },
-    "freya": {
-        "-": ("black witch hat with red band, black and red corset dress, deep cleavage, bare shoulders, sheer black "
-              "sleeves, very high leg slit, bare thigh, gold jewelry, black high heels",
-              "witch tower room at night, candles, floating magic flames, bookshelves",
-              "sitting on a velvet armchair, legs crossed, chin on hand, fire orb floating beside her"),
-        "A": ("off-shoulder red knit sweater, bare shoulders, black mini skirt, bare legs, ankle boots, hair down",
-              "cafe terrace in town, afternoon sun, flower pots",
-              "sitting at a cafe table, legs crossed, holding tea cup, relaxed smile"),
-        "B": ("red yukata with goldfish pattern, loose collar, bare shoulders, short hem, bare thighs, black obi, "
-              "hair up, kanzashi", "summer festival at night, goldfish scooping stall, lanterns",
-              "crouching by a goldfish pool, holding a paper scoop, looking up at viewer, playful smile"),
-        "C": ("light silver knight armor, bikini armor, cleavage, bare midriff, red cape, thigh-high armored boots, "
-              "holding sword", "castle courtyard, banners, blue sky",
-              "sitting on castle steps, sword resting on shoulder, teasing smile"),
-        "D": ("red bikini, string bikini, cleavage, bare midriff, sheer black beach cover-up, sun hat, sunglasses",
-              "beach under a parasol, sparkling sea, beach chair, iced tea",
-              "lying on a beach chair, one knee up, holding sunscreen bottle, inviting smile"),
-        "E": ("crimson red evening gown, off-shoulder, deep cleavage, bare back, high leg slit, bare thigh, "
-              "long black gloves, ruby necklace", "grand ballroom, chandeliers, dancing crowd blurred",
-              "leaning on a pillar, hip out, hand extended to viewer, confident smile"),
-        "F": ("dark purple witch outfit, corrupted, purple glowing crystals, cleavage, bare midriff, torn black cape, "
-              "purple flames, purple eyes glow", "dark rift portal, purple lightning, ruins",
-              "floating in the air, legs crossed, purple fire in palm, fierce smile"),
-        "G": ("black lace negligee, thin straps, cleavage, short hem, bare legs, sheer black robe slipping off shoulder",
-              "bedroom at night, single lamp, dark red sheets",
-              "lying on side on a bed, head propped on hand, looking at viewer, seductive smile"),
-        "H": ("race queen outfit, red and black bodysuit, highleg, cleavage cutout, bare shoulders, "
-              "black thigh-high boots, holding umbrella", "race circuit, pit lane, racing car, checkered flags",
-              "leaning back against a race car, one leg bent, umbrella on shoulder, wink"),
-        "I": ("short black and red furisode kimono, floral, loose collar, bare shoulders, short hem, bare thighs, "
-              "holding folding fan", "shrine at new year, torii gate, snow, red lanterns",
-              "sitting on shrine stairs, legs crossed, fan covering mouth, sly eyes"),
-        "J": ("white wedding dress, strapless, sweetheart neckline, cleavage, high leg slit, bare thigh, sheer veil, "
-              "red rose bouquet", "chapel at night, candles, red roses, stained glass",
-              "sitting on the chapel altar steps, bouquet in lap, veil over shoulder, tender smile"),
-    },
-    "yukino": {
-        "-": ("white and light blue miko outfit, detached wide sleeves, bare shoulders, cleavage, short blue hakama skirt, "
-              "bare thighs, white thigh-high socks, zouri sandals", "snowy shrine, torii gate, falling snow, stone lanterns",
-              "kneeling seiza on the shrine veranda, fan in lap, gentle smile"),
-        "A": ("white off-shoulder blouse, light blue high-waist skirt, short skirt, bare legs, sandals, hair loose",
-              "flower garden, white flowers, soft sunlight",
-              "sitting on a garden swing, legs together, hands on the ropes, shy smile"),
-        "B": ("white and blue yukata with snowflake pattern, loose collar, bare shoulders, short hem, bare thighs, "
-              "light blue obi", "riverside at night, fireworks in sky, lanterns",
-              "sitting on the riverbank, legs to one side, looking up at the fireworks, soft smile"),
-        "C": ("mechanic outfit, unzipped jumpsuit tied at waist, white tube top, cleavage, bare midriff, bare shoulders, "
-              "holding wrench, oil smudge on cheek", "workshop, gears, tools on the wall, warm light",
-              "sitting on a workbench, legs dangling, holding a wrench, embarrassed smile, blush"),
-        "D": ("white bikini, frilled bikini, cleavage, bare midriff, light blue sarong, flower in hair",
-              "beach shallows, gentle waves, sunset",
-              "sitting in shallow water, legs to one side, hands on chest, shy, blush"),
-        "E": ("silver white evening gown, off-shoulder, cleavage, bare back, high leg slit, bare thigh, "
-              "long white gloves, snowflake tiara", "moonlit terrace, snow, night sky",
-              "dancing pose, skirt twirling, looking over shoulder, gentle smile"),
-        "F": ("dark purple and black miko outfit, corrupted, purple glowing crystals, cleavage, bare shoulders, "
-              "short hakama, purple eyes glow", "dark rift portal, purple ice shards, ruins",
-              "kneeling on one knee, fan raised, purple frost swirling, cold expression"),
-        "G": ("white silk slip dress, thin straps, cleavage, short hem, bare legs, hand on chest",
-              "japanese bedroom at night, futon, moonlight through shoji",
-              "sitting on a futon, knees together, leaning forward, shy, heavy blush"),
-        "H": ("race queen outfit, ice blue and white bodysuit, highleg, cleavage cutout, bare shoulders, "
-              "white thigh-high boots, holding umbrella", "race circuit, pit lane, racing car, checkered flags",
-              "sitting on a tire stack, knees together, umbrella held with both hands, shy smile"),
-        "I": ("short white and light blue furisode kimono, floral, loose collar, bare shoulders, short hem, "
-              "bare thighs, white tabi socks, holding folding fan", "shrine at new year, torii gate, heavy snow",
-              "standing under a red umbrella in snow, fan held to chest, looking at viewer, soft smile"),
-        "J": ("white wedding dress, strapless, sweetheart neckline, cleavage, sheer veil, short front long back skirt, "
-              "bare legs, white camellia bouquet", "snowy garden chapel, white camellias, soft light",
-              "sitting on a white bench, bouquet held to chest, veil flowing, teary happy smile"),
-    },
-    "rena": {
-        "-": ("cropped navy jacket with yellow stripes, white tube top, cleavage, bare midriff, black short shorts, "
-              "tool belt, bare thighs, yellow work boots", "workshop, gears, sparks, machines, warm light",
-              "sitting on a big crate, one leg up, wrench over shoulder, grin"),
-        "A": ("orange overalls with one strap down, white crop top, bare midriff, cleavage, bare shoulders, "
-              "short shorts, sneakers", "garage, motorbike, tools, sunlight",
-              "sitting on a motorbike seat, legs crossed, holding a screwdriver, cheeky grin"),
-        "B": ("purple yukata with firework pattern, loose collar, bare shoulders, short hem, bare thighs, yellow obi, "
-              "fox mask on head", "summer festival at night, food stalls, cotton candy, lanterns",
-              "sitting on a stool, holding cotton candy and squid skewer, happy open mouth"),
-        "C": ("red and white miko outfit, detached sleeves, bare shoulders, cleavage, short red hakama, bare thighs",
-              "shrine grounds, autumn leaves", "sitting on shrine steps, confused pout, holding gohei"),
-        "D": ("yellow bikini, sporty bikini, cleavage, bare midriff, holding homemade water jet pack",
-              "beach, sea spray, smoke from gadget, blue sky",
-              "sitting in the sand wet, laughing, gadget smoking beside her, one eye closed"),
-        "E": ("lavender evening gown, strapless, cleavage, high leg slit, bare thigh, long gloves, gear hair ornament",
-              "ballroom balcony, night, city lights",
-              "sitting on the balcony railing, holding skirt, flustered, blush, pout"),
-        "F": ("dark purple mechanic outfit, corrupted, purple glowing crystals, cleavage, bare midriff, "
-              "purple lightning, purple eyes glow", "dark rift portal, purple lightning, ruins",
-              "crouching on a broken machine, wrench crackling with purple electricity, wild grin"),
-        "G": ("lavender satin pajamas, unbuttoned top, cleavage, bare midriff, short pajama shorts, bare legs, "
-              "hugging pillow", "bedroom at night, workbench in corner, small lamp",
-              "lying on her stomach on a bed, hugging a pillow, legs kicking up, blush, pout"),
-        "H": ("race queen outfit, purple and yellow bodysuit, highleg, cleavage cutout, bare shoulders, "
-              "yellow thigh-high boots, waving checkered flag", "race circuit, pit lane, racing car",
-              "standing on a race car, waving a checkered flag, energetic pose, big grin"),
-        "I": ("short purple and yellow furisode kimono, floral, loose collar, bare shoulders, short hem, bare thighs, "
-              "holding hagoita paddle", "shrine at new year, torii gate, snow",
-              "jumping pose, swinging hagoita paddle, shuttlecock in air, big grin"),
-        "J": ("white wedding dress, strapless, sweetheart neckline, cleavage, short front long back skirt, bare legs, "
-              "lavender bouquet with small gears", "flower garden chapel, lavender field",
-              "sitting on a garden swing, bouquet in lap, blushing, embarrassed smile"),
-    },
-}
+OUTFITS = {h: {sid: (o.get("outfit", ""), o.get("scene", ""), o.get("scene_pose", "")) for sid, o in c.get("outfits", {}).items()}
+           for h, c in _C.CHARACTERS.items()}
 
 # outfits that carry their own prop instead of the usual weapon on the battle plate
 NO_WEAPON = {("alicia", k) for k in "BCDEGHIJ"} | {("freya", k) for k in "ACDEGHIJ"} | \
@@ -400,8 +249,7 @@ def install(work, hero, series):
     for name in EXPRESSIONS:
         args += ["--variant", "%s=%s" % (name, os.path.join(d, "expr_%s.png" % name))]
     subprocess.run(args, check=True)
-    dest = os.path.join(ROOT, "Assets", "Heroines", hero) if series == "-" else \
-        os.path.join(ROOT, "Assets", "Heroines", hero, "skins", series)
+    dest = _C.plate_dir(hero, series)   # live2d.toml [paths] plates
     os.makedirs(dest, exist_ok=True)
     for f in os.listdir(out):
         if f.endswith(".png") and not f.startswith("_") or f == "meta.json":

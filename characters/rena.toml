@@ -1,0 +1,65 @@
+# 蕾娜: from towerD (Tools/art/heroine_j3.py HEROES / OUTFITS, key_poses.py LORA / HOLD), 2026-10-02
+id = "rena"
+name = "蕾娜"
+age = 23   # adults only (twenties); written into prompts as "N years old"
+look = "(lavender hair:1.3), purple hair, high ponytail, yellow hair ribbon, goggles on head, amber eyes, grin"
+neg = ", blonde hair, yellow hair, orange hair"   # added to the negative prompt when this look is in it
+weapon = "holding giant wrench over shoulder"   # how the plates draw it
+hold = "holding wrench"   # the weapon in plain words (AI redraws of the weapon, key poses)
+lora = "rena_waiIllustriousSDXL_v170.safetensors"   # character LoRA for waiIllustriousSDXL
+trigger = "rena_tdc"
+
+[outfits."-"]
+outfit = "cropped navy jacket with yellow stripes, white tube top, cleavage, bare midriff, black short shorts, tool belt, bare thighs, yellow work boots"
+scene = "workshop, gears, sparks, machines, warm light"
+scene_pose = "sitting on a big crate, one leg up, wrench over shoulder, grin"
+
+[outfits."A"]
+outfit = "orange overalls with one strap down, white crop top, bare midriff, cleavage, bare shoulders, short shorts, sneakers"
+scene = "garage, motorbike, tools, sunlight"
+scene_pose = "sitting on a motorbike seat, legs crossed, holding a screwdriver, cheeky grin"
+
+[outfits."B"]
+outfit = "purple yukata with firework pattern, loose collar, bare shoulders, short hem, bare thighs, yellow obi, fox mask on head"
+scene = "summer festival at night, food stalls, cotton candy, lanterns"
+scene_pose = "sitting on a stool, holding cotton candy and squid skewer, happy open mouth"
+
+[outfits."C"]
+outfit = "red and white miko outfit, detached sleeves, bare shoulders, cleavage, short red hakama, bare thighs"
+scene = "shrine grounds, autumn leaves"
+scene_pose = "sitting on shrine steps, confused pout, holding gohei"
+
+[outfits."D"]
+outfit = "yellow bikini, sporty bikini, cleavage, bare midriff, holding homemade water jet pack"
+scene = "beach, sea spray, smoke from gadget, blue sky"
+scene_pose = "sitting in the sand wet, laughing, gadget smoking beside her, one eye closed"
+
+[outfits."E"]
+outfit = "lavender evening gown, strapless, cleavage, high leg slit, bare thigh, long gloves, gear hair ornament"
+scene = "ballroom balcony, night, city lights"
+scene_pose = "sitting on the balcony railing, holding skirt, flustered, blush, pout"
+
+[outfits."F"]
+outfit = "dark purple mechanic outfit, corrupted, purple glowing crystals, cleavage, bare midriff, purple lightning, purple eyes glow"
+scene = "dark rift portal, purple lightning, ruins"
+scene_pose = "crouching on a broken machine, wrench crackling with purple electricity, wild grin"
+
+[outfits."G"]
+outfit = "lavender satin pajamas, unbuttoned top, cleavage, bare midriff, short pajama shorts, bare legs, hugging pillow"
+scene = "bedroom at night, workbench in corner, small lamp"
+scene_pose = "lying on her stomach on a bed, hugging a pillow, legs kicking up, blush, pout"
+
+[outfits."H"]
+outfit = "race queen outfit, purple and yellow bodysuit, highleg, cleavage cutout, bare shoulders, yellow thigh-high boots, waving checkered flag"
+scene = "race circuit, pit lane, racing car"
+scene_pose = "standing on a race car, waving a checkered flag, energetic pose, big grin"
+
+[outfits."I"]
+outfit = "short purple and yellow furisode kimono, floral, loose collar, bare shoulders, short hem, bare thighs, holding hagoita paddle"
+scene = "shrine at new year, torii gate, snow"
+scene_pose = "jumping pose, swinging hagoita paddle, shuttlecock in air, big grin"
+
+[outfits."J"]
+outfit = "white wedding dress, strapless, sweetheart neckline, cleavage, short front long back skirt, bare legs, lavender bouquet with small gears"
+scene = "flower garden chapel, lavender field"
+scene_pose = "sitting on a garden swing, bouquet in lap, blushing, embarrassed smile"

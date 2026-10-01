@@ -8,9 +8,10 @@ Writes <out_dir>/<name>_<seed>.png. Background removal is a separate step (cutou
 """
 import argparse, json, os, time, urllib.request, uuid
 
-SERVER = "http://127.0.0.1:8188"
+import config as _C   # live2d.toml
+SERVER = _C.COMFY_URL
 # the checkpoint every tool uses; the art studio (Tools/studio) and ART_CKPT pick another one
-CKPT = os.environ.get("ART_CKPT", "autismmixSDXL_autismmixPony.safetensors")
+CKPT = _C.CKPT   # live2d.toml [models] checkpoint, or ART_CKPT
 # Pony checkpoints read "score_9 ... source_anime" quality tags; Illustrious ones read "masterpiece, best quality ..."
 ILLUSTRIOUS = ("waiIllustrious", "illustrious", "noob", "hassaku", "nova")
 PONY_TAGS = ("score_9", "score_8_up", "score_7_up", "score_6_up", "score_4", "score_5", "score_6",

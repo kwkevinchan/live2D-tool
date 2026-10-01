@@ -2,8 +2,8 @@
 on our own SDXL checkpoint + her character LoRA, so the new angles keep the look (2026-10-01, the owner's pipeline:
 complete what a single front view can't show).
 
-Runs in its own venv (C:/Users/kwkev/Tool/mvadapter-env: MV-Adapter pins old diffusers / transformers; torch comes
-from ComfyUI's venv through a .pth file) and needs the MV-Adapter repo at C:/Users/kwkev/Tool/MV-Adapter.
+Runs in its own venv (live2d.toml [mvadapter] python: MV-Adapter pins old diffusers / transformers; torch comes
+from ComfyUI's venv through a .pth file) and needs the MV-Adapter repo ([mvadapter] repo).
 
     mvadapter-env/Scripts/python.exe Tools/art/multiview.py <plate.png> <out_dir> --lora freya [--prompt "..."]
 
@@ -16,8 +16,9 @@ import sys
 import torch
 from PIL import Image
 
-TOOL = r"C:\Users\kwkev\Tool"
-sys.path.insert(0, os.path.join(TOOL, "MV-Adapter"))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import config as _C   # live2d.toml [mvadapter], [models]
+sys.path.insert(0, _C.MV["repo"])
 from mvadapter.pipelines.pipeline_mvadapter_i2mv_sdxl import MVAdapterI2MVSDXLPipeline   # noqa: E402
 from mvadapter.schedulers.scheduling_shift_snr import ShiftSNRScheduler                   # noqa: E402
 from diffusers import AutoencoderKL                                                        # noqa: E402
@@ -32,7 +33,7 @@ def _load(path, name):
     return mod
 
 
-get_plucker_embeds_from_cameras_ortho = _load(os.path.join(TOOL, "MV-Adapter", "mvadapter", "utils", "geometry.py"),
+get_plucker_embeds_from_cameras_ortho = _load(os.path.join(_C.MV["repo"], "mvadapter", "utils", "geometry.py"),
                                               "mv_geometry").get_plucker_embeds_from_cameras_ortho
 
 
@@ -53,8 +54,8 @@ def camera_c2w(azimuth_deg, distance=1.8, device="cuda"):
     c2w[:, 3, 3] = 1.0
     return c2w
 
-MODELS = os.path.join(TOOL, "StabilityMatrix-win-x64", "Data", "Models")
-CKPT = os.path.join(MODELS, "StableDiffusion", "waiIllustriousSDXL_v170.safetensors")
+MODELS = _C.MODELS
+CKPT = os.path.join(MODELS, "StableDiffusion", _C.CKPT)
 ADAPTER = os.path.join(MODELS, "MVAdapter")
 VIEWS = [0, 90, 180, 270]   # 6 views at once overflowed 16 GB (2026-10-01): front, right, back, left
 
@@ -62,7 +63,7 @@ VIEWS = [0, 90, 180, 270]   # 6 views at once overflowed 16 GB (2026-10-01): fro
 def pipeline(lora=None, lora_scale=float(os.environ.get("MV_LORA_SCALE", "0.3"))):   # 0.8 overpowered the camera: every view came out frontal
     vae = AutoencoderKL.from_pretrained(os.path.join(ADAPTER, "sdxl-vae-fp16-fix"), torch_dtype=torch.float16)
     # the SDXL configs and tokenizers (3 MB) sit in a plain folder: the HF cache uses symlinks Windows refuses
-    pipe = MVAdapterI2MVSDXLPipeline.from_single_file(CKPT, config=os.path.join(TOOL, "sdxl-config"), vae=vae,
+    pipe = MVAdapterI2MVSDXLPipeline.from_single_file(CKPT, config=_C.MV["configs"], vae=vae,
                                                       torch_dtype=torch.float16)
     pipe.scheduler = ShiftSNRScheduler.from_scheduler(pipe.scheduler, shift_mode="interpolated", shift_scale=8.0)
     pipe.init_custom_adapter(num_views=len(VIEWS))
