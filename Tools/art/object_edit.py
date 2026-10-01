@@ -34,9 +34,6 @@ QWEN_UNET = os.environ.get("QWEN_UNET", "qwen-image-edit-2511-Q4_K_M.gguf")
 QWEN_CLIP = "qwen_2.5_vl_7b_fp8_scaled.safetensors"
 QWEN_VAE = "qwen_image_vae.safetensors"
 QWEN_LORA = "Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors"   # 4 steps (--fast)
-# --engine gemini: Google AI Studio (GOOGLE_API_KEY, or the repo's .env, never committed); picture output needs a
-# billed project (the free tier's image quota is 0, 2026-10-02)
-GEMINI_MODEL = os.environ.get("GEMINI_IMAGE_MODEL", "gemini-2.5-flash-image")
 
 
 def graph(instr, neg, seed, refs, w, h, steps=4, cfg=1.0):
@@ -94,46 +91,6 @@ def graph_qwen(instr, neg, seed, refs, fast=False):
     return g
 
 
-def gemini_key():
-    k = os.environ.get("GOOGLE_API_KEY")
-    if not k:
-        env = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".env")
-        if os.path.exists(env):
-            k = next((l.split("=", 1)[1].strip() for l in open(env) if l.startswith("GOOGLE_API_KEY=")), None)
-    if not k:
-        raise SystemExit("no GOOGLE_API_KEY (environment or .env)")
-    return k
-
-
-def run_gemini(instr, images):
-    """one picture from Google's image model: the instruction and the reference pictures in, a picture out"""
-    import base64
-    import io
-    import json
-    import urllib.error
-    import urllib.request
-    parts = []
-    for im in images:
-        buf = io.BytesIO()
-        im.save(buf, "PNG")
-        parts.append({"inlineData": {"mimeType": "image/png", "data": base64.b64encode(buf.getvalue()).decode()}})
-    parts.append({"text": instr})
-    body = {"contents": [{"parts": parts}], "generationConfig": {"responseModalities": ["IMAGE", "TEXT"]}}
-    req = urllib.request.Request("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent" % GEMINI_MODEL,
-                                 data=json.dumps(body).encode(),
-                                 headers={"Content-Type": "application/json", "x-goog-api-key": gemini_key()})
-    try:
-        r = json.loads(urllib.request.urlopen(req, timeout=300).read())
-    except urllib.error.HTTPError as e:
-        msg = json.loads(e.read()).get("error", {}).get("message", "")
-        raise SystemExit("Gemini %d: %s" % (e.code, msg.splitlines()[0] if msg else ""))
-    for c in r.get("candidates", []):
-        for p in c.get("content", {}).get("parts", []):
-            if "inlineData" in p:
-                return Image.open(io.BytesIO(base64.b64decode(p["inlineData"]["data"]))).convert("RGB")
-    raise SystemExit("Gemini gave no picture: %s" % str(r)[:300])
-
-
 def unwhite(rgb):
     """alpha: off where the colour is near white and joined to the border"""
     white = rgb.min(-1) > 235
@@ -154,12 +111,12 @@ def main():
     ap.add_argument("--src", default="current", choices=["current", "orig"])
     ap.add_argument("--pad", type=float, default=0.25)
     ap.add_argument("--extra", default="", help="more reference pictures (another view angle), comma separated")
-    ap.add_argument("--tag", default="", help="file tag: st/gen/<part>_<tag><seed>.png (default e / q / qf / g by engine)")
-    ap.add_argument("--engine", default="mage", choices=["mage", "qwen", "gemini"],
-                    help="mage: Mage-Flow-Edit-Turbo (local); qwen: Qwen-Image-Edit-2511 (local); gemini: Google (cloud)")
+    ap.add_argument("--tag", default="", help="file tag: st/gen/<part>_<tag><seed>.png (default e / q / qf by engine)")
+    ap.add_argument("--engine", default="mage", choices=["mage", "qwen"],
+                    help="mage: Mage-Flow-Edit-Turbo; qwen: Qwen-Image-Edit-2511 (both local, through ComfyUI)")
     ap.add_argument("--fast", action="store_true", help="--engine qwen: 4 steps with the Lightning LoRA")
     a = ap.parse_args()
-    a.tag = a.tag or {"mage": "e", "qwen": "qf" if a.fast else "q", "gemini": "g"}[a.engine]
+    a.tag = a.tag or {"mage": "e", "qwen": "qf" if a.fast else "q"}[a.engine]
     ld = os.path.join(WORK, "live", a.hero, a.series)
     st = os.path.join(ld, "st")
     gd = os.path.join(st, "gen")
@@ -188,20 +145,17 @@ def main():
     tmp = os.path.join(os.environ.get("TEMP", "."), "oe_%s" % uuid.uuid4().hex)
     names = []
     pics = [ref.resize((W, H), Image.LANCZOS)] + [Image.open(e).convert("RGB") for e in a.extra.split(",") if e]
-    if a.engine != "gemini":
-        for i, im in enumerate(pics):
-            im.save(tmp + "_%d.png" % i)
-            names.append(cg.upload(tmp + "_%d.png" % i))
+    for i, im in enumerate(pics):
+        im.save(tmp + "_%d.png" % i)
+        names.append(cg.upload(tmp + "_%d.png" % i))
     os.environ.pop("ART_LORA", None)   # comfy_gen adds an SDXL LoRA when this is set: not for this model
     tiles = [(ref, "reference")]
     for sd in [int(s) for s in a.seeds.split(",") if s]:
         t0 = time.time()
         if a.engine == "mage":
             out = j3.run_wf(graph(a.instr, a.neg, sd, names, W, H))
-        elif a.engine == "qwen":
+        else:
             out = j3.run_wf(graph_qwen(a.instr, a.neg, sd, names, a.fast))
-        else:   # the cloud model takes no seed: each call is simply another try
-            out = run_gemini(a.instr, pics)
         out = out.resize((w, h), Image.LANCZOS)
         print("seed %d: %.0f s" % (sd, time.time() - t0), flush=True)
         rgb = np.asarray(out).astype(int)
