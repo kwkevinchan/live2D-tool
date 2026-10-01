@@ -127,7 +127,7 @@
 - **輸出接 `| head` 會在程式還在寫時關掉管線**，產生 OSError；檔案其實已經寫出，看到錯誤先確認。
 - **Windows 指令列長度有限**（WinError 206）：很多參數改成從檔案讀（`@檔案`）。
 - `Tools/fetch.py` 會把整個檔案讀進記憶體再寫出，同時下載幾個大檔要注意記憶體。
-- 需要 OpenCV 的工具要用有裝的 Python 環境（towerD 的 `myenv`）。
+- 工具要用裝了 numpy、scipy、Pillow、opencv、rembg、gradio 的 Python：這台電腦 PATH 上的 `python` 已經有（towerD 的 `myenv` 也可以）。改完程式先跑 `Tools/run_tests.sh`。
 - 變數不要跟函式或外層變數撞名（`label`、`out` 都曾經出錯）；numpy 的布林值不要用 `is False` 比較。
 
 ## 十一、檢查方式
