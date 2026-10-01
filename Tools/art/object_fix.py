@@ -622,6 +622,34 @@ def flat_fill(a, ld, st, meta):
     return 0
 
 
+def extend_under(a, ld, st, meta):
+    """--extend-under <layer>[,...]: the part carried on under those layers (in front of it), as far as --reach px
+    from its own edge and inside the figure, coloured from its own nearest pixel. No AI. What the front layers hide
+    must be there when they move: back hair behind long front locks, or a head turn shows the background
+    (2026-10-02). Candidate 10"""
+    part = np.asarray(Image.open(os.path.join(st, "part_%s.png" % a.part)).convert("RGBA")).copy()
+    full = np.asarray(Image.open(os.path.join(ld, "full.png")).convert("RGBA"))
+    on = part[..., 3] > 128
+    front = np.zeros(on.shape, bool)
+    for n in a.extend_under.split(","):
+        f = os.path.join(st, "part_%s.png" % n.strip())
+        if os.path.exists(f):
+            front |= np.asarray(Image.open(f).convert("RGBA"))[..., 3] > 128
+    reach = ndimage.binary_dilation(on, iterations=a.reach)
+    fig = ndimage.binary_dilation(full[..., 3] > 128, iterations=2)
+    add = front & reach & fig & ~on
+    src = on & (part[..., :3].max(-1) > 60)   # not its dark outline (black would smear inwards)
+    _, (iy, ix) = ndimage.distance_transform_edt(~src, return_indices=True)
+    res = part.copy()
+    res[add, :3] = part[iy[add], ix[add], :3]
+    res[add, 3] = 255
+    fixd = os.path.join(st, "fix")
+    os.makedirs(fixd, exist_ok=True)
+    Image.fromarray(res).save(os.path.join(fixd, "%s_10.png" % a.part))
+    print("%s: carried on under %s: %d px -> candidate 10" % (a.part, a.extend_under, int(add.sum())), flush=True)
+    return 0
+
+
 def recolor_grey(a, ld, st, meta):
     """--recolor-grey <layer>: the grey or washed-out pixels of the part (what the split painted in where the part is
     hidden: back hair behind the body came out pale grey) take the colours another layer shows (front hair), matched
@@ -737,6 +765,10 @@ def main():
                          "from <figure>, default views folder's figure.png) laid back on the plate; a back view is "
                          "flipped (hair behind the body seen from the front is the back view mirrored)")
     ap.add_argument("--figure", default="", help="the picture multiview.py was given (to lay its views back on the plate)")
+    ap.add_argument("--extend-under", default="",
+                    help="<layer>[,...]: carry the part on under these layers (what they hide must be there when they "
+                         "move), up to --reach px from its edge, inside the figure, nearest colour; no AI; candidate 10")
+    ap.add_argument("--reach", type=int, default=40, help="--extend-under: how far (px) past the part's own edge")
     ap.add_argument("--recolor-grey", default="",
                     help="<layer>: the part's grey / washed-out pixels take that layer's showing colours by brightness "
                          "(hidden back hair painted grey, recoloured like the front hair); no AI; candidate 9")
@@ -802,6 +834,8 @@ def main():
     if a.mirror:
         part = mirrored(a.part, st, pv, (part.shape[1], part.shape[0]))
     shape = lines = None
+    if a.extend_under:
+        return extend_under(a, ld, st, meta)
     if a.recolor_grey:
         return recolor_grey(a, ld, st, meta)
     if a.flat:

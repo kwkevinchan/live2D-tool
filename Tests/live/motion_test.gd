@@ -3,7 +3,10 @@ extends Node2D
 ## and can't do shows before any skill pose is made. Each motion runs MOTION_SECS seconds; every 2nd frame is saved
 ## to <out_dir>/<motion>/anim_*.png, and report.json lists per motion the parameters it wanted and the model lacked.
 ## Needs a window (the headless renderer draws nothing).
-##   Godot_console.exe --path . res://Tests/live/motion_test.tscn -- <model.inx> <out_dir> [motion ...] [bare]
+##   Godot_console.exe --path . res://Tests/live/motion_test.tscn -- <model.inx> <out_dir> [motion ...] [bare] [nophys]
+## "nophys" turns the pendulums off (hair, skirt, cape stay put): the joints are checked first, the swings after.
+## Each motion's frames.json lists, per saved frame, the parameters set and where the whole model was moved to, so
+## Tools/art/motion_sheet.py can pick the frames of the biggest moves (the LLM looks at those, not at the GIFs).
 ## "bare" hides the weapon and the other objects: the character is verified on her own first, the weapon and the
 ## objects on their own (Tools/art/object_check.py), and only then together (Docs/Design/22b).
 
@@ -40,6 +43,10 @@ func _ready() -> void:
 	for p in puppet.params:
 		_defaults[p["name"]] = p["value"]
 	var picked: Array = args.slice(2)
+	if picked.has("nophys"):
+		picked.erase("nophys")
+		for d in puppet.drivers:
+			d["enabled"] = false
 	if picked.has("bare"):
 		picked.erase("bare")
 		for uuid in puppet.nodes:
@@ -102,6 +109,7 @@ func _record(motion: String) -> void:
 	for p in puppet.params:   # every motion starts from the model's own defaults
 		p["value"] = _defaults.get(p["name"], Vector2.ZERO)
 	var frames := int(MOTION_SECS * 30.0)
+	var log: Array = []   # per saved frame: {"frame", "params": {name: value}, "offset": [x, y], "scale": [x, y]}
 	for f in frames:
 		var t := f / 30.0
 		puppet.root_offset = Vector2.ZERO
@@ -113,6 +121,17 @@ func _record(motion: String) -> void:
 		if f % 2 == 0:
 			await RenderingServer.frame_post_draw
 			get_viewport().get_texture().get_image().save_png(dir.path_join("anim_%04d.png" % (f / 2)))
+			var vals := {}
+			for p in puppet.params:
+				var v: Vector2 = p["value"]
+				var d: Vector2 = _defaults.get(p["name"], Vector2.ZERO)
+				if not v.is_equal_approx(d) and not p["driven"]:
+					vals[p["name"]] = v.x if not p["is_vec2"] else [v.x, v.y]
+			log.append({"frame": f / 2, "params": vals, "offset": [puppet.root_offset.x, puppet.root_offset.y],
+				"scale": [puppet.root_scale.x, puppet.root_scale.y]})
+	var lf := FileAccess.open(dir.path_join("frames.json"), FileAccess.WRITE)
+	lf.store_string(JSON.stringify(log))
+	lf.close()
 	print("motion ", motion)
 
 
