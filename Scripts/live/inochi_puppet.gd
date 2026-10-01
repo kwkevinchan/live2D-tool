@@ -81,6 +81,10 @@ func load_payload(payload: Dictionary) -> bool:
 		var prm := _make_param(p)
 		params.append(prm)
 		param_by_name[prm["name"]] = prm
+	# the pendulums start hanging at rest under their anchors' real places: without the transforms worked out first
+	# every anchor was at the origin, and a pendulum hung far from it (a skirt's at the knee) started with a big swing
+	# that bent the part at rest (2026-10-02)
+	_update_transforms(root_uuid, Transform3D.IDENTITY)
 	for uuid in nodes:
 		var n: Dictionary = nodes[uuid]
 		if n["type"] == "SimplePhysics":

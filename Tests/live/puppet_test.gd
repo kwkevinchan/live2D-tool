@@ -125,6 +125,17 @@ func _physics() -> void:
 		p.update_puppet(1.0 / 30.0)
 	check(absf(p.get_param("Sway").x - rest) < 0.05, "and it settles again (%.3f)" % p.get_param("Sway").x)
 	p.queue_free()
+	# a pendulum hung far from the origin (a skirt's at the knee) is at rest from the first frame: its start state
+	# is worked out at its anchor's real place (it once started at the origin and bent the skirt at rest)
+	var far := phys.duplicate(true)
+	far["transform"] = _tr(300, 400)
+	var root2 := {"uuid": 1, "name": "Root", "type": "Node", "enabled": true, "zsort": 0.0, "transform": _tr(),
+		"children": [_part(2, "Hair", 0.0), far]}
+	var sway2 := sway.duplicate(true)
+	var q := _puppet(root2, [sway2])
+	q.update_puppet(0.0)
+	check(absf(q.get_param("Sway").x) < 0.05, "a pendulum far from the origin starts at rest (%.3f)" % q.get_param("Sway").x)
+	q.queue_free()
 
 
 ## a pose model is driven by LivePortrait only: set_process(false) before add_child is undone when the node enters

@@ -753,7 +753,7 @@ def rig_st(hero, series, out=None):
         weapon = add("Weapon", clean_objects(part_img("objects"), full), OVER_HEAD - 0.05 if over_head("objects") else 0.27)
     # "objects-back": the stretches of the weapon the figure hides (under a hat brim, behind the dress), painted in by
     # the art split; drawn behind everything so at rest the figure covers it as on the plate, turning with the weapon
-    weapon_back = add("Weapon Back", part_img("objects-back"), WEAPON_BACK_Z) if weapon is not None and have("objects-back") else None
+    weapon_back = add("Weapon Back", part_img("objects-back"), WEAPON_BACK_Z)         if weapon is not None and have("objects-back") and np.asarray(part_img("objects-back"))[..., 3].max() > 8 else None   # empty: the plate hides none of it
     arm_nodes, arm_params = [], []
     limb_swing = []   # (part, kind, node it hangs from, that node's place in puppet space)
 

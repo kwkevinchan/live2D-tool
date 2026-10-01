@@ -457,11 +457,12 @@ def sort_hair(a, ld, st, meta):
     os.makedirs(orig, exist_ok=True)
     if not os.path.exists(os.path.join(orig, "part_%s.png" % a.part)):
         shutil.copy(path, os.path.join(orig, "part_%s.png" % a.part))
-    out = np.zeros_like(part)
-    out[hair] = part[hair]
+    sp = os.path.join(st, "part_side_hair.png")   # added to the hair sorted out before (another layer's), not over it
+    out = np.asarray(Image.open(sp).convert("RGBA")).copy() if os.path.exists(sp) else np.zeros_like(part)
+    out[hair & (out[..., 3] < 128)] = part[hair & (out[..., 3] < 128)]
     rest = part.copy()
     rest[hair, 3] = 0
-    Image.fromarray(out).save(os.path.join(st, "part_side_hair.png"))
+    Image.fromarray(out).save(sp)
     Image.fromarray(rest).save(path)
     order = meta["order_back_to_front"]
     names = [q["name"] for q in order]
@@ -490,9 +491,14 @@ def split_front(a, ld, st, meta):
     shows = np.abs(part[..., :3].astype(int) - full[..., :3]).max(-1) < 30
     front = on & shows & ndimage.binary_dilation(over, iterations=2)
     mv = os.path.join(st, "fix", "face_moved.png")
-    if os.path.exists(mv):
-        front |= on & (np.asarray(Image.open(mv).convert("RGBA"))[..., 3] > 128)
+    moved = np.asarray(Image.open(mv).convert("RGBA")) if os.path.exists(mv) else None
     front = ndimage.binary_closing(front, iterations=1) & on
+    if moved is not None:   # what --flat took out of the face (the band on the forehead), even where this layer is
+        took = moved[..., 3] > 128   # empty: the split painted it into the face only (2026-10-02)
+        part = part.copy()
+        part[took] = moved[took]
+        on = on | took
+        front |= took
     orig = os.path.join(st, "_orig")
     os.makedirs(orig, exist_ok=True)
     if not os.path.exists(os.path.join(orig, "part_%s.png" % a.part)):
@@ -616,6 +622,47 @@ def flat_fill(a, ld, st, meta):
     return 0
 
 
+def recolor_grey(a, ld, st, meta):
+    """--recolor-grey <layer>: the grey or washed-out pixels of the part (what the split painted in where the part is
+    hidden: back hair behind the body came out pale grey) take the colours another layer shows (front hair), matched
+    by brightness rank, so the part keeps its own shading and strands and only its colour changes. No AI (an AI
+    repaint of a large grey area drew eyes and faces, 2026-10-02); the shape stays as it is. Candidate 9"""
+    part = np.asarray(Image.open(os.path.join(st, "part_%s.png" % a.part)).convert("RGBA")).copy()
+    ref = np.asarray(Image.open(os.path.join(st, "part_%s.png" % a.recolor_grey)).convert("RGBA")).astype(int)
+    full = np.asarray(Image.open(os.path.join(ld, "full.png")).convert("RGBA")).astype(int)
+    rgb = part[..., :3].astype(int)
+    on = part[..., 3] > 128
+    sat = rgb.max(-1) - rgb.min(-1)
+    grey = on & (sat < a.grey_sat) & (rgb.max(-1) > 55)
+    # the reference's own colours: where it shows the plate (not what the split guessed), lines left out
+    rs = (ref[..., 3] > 128) & (np.abs(ref[..., :3] - full[..., :3]).max(-1) < 30)
+    cols = ref[rs][:, :3]
+    cols = cols[cols.max(-1) > 40]
+    if len(grey) == 0 or len(cols) < 50:
+        raise SystemExit("nothing grey in %s, or too little of %s shows" % (a.part, a.recolor_grey))
+    luma = lambda c: c[..., 0] * 0.299 + c[..., 1] * 0.587 + c[..., 2] * 0.114
+    cols = cols[np.argsort(luma(cols))]
+    g = luma(rgb[grey].astype(float))
+    rank = np.argsort(np.argsort(g)) / max(1, len(g) - 1)   # 0 darkest .. 1 brightest of the grey pixels
+    res = part.copy()
+    res[grey, :3] = cols[(rank * (len(cols) - 1)).astype(int)].astype(np.uint8)
+    fixd = os.path.join(st, "fix")
+    os.makedirs(fixd, exist_ok=True)
+    Image.fromarray(res).save(os.path.join(fixd, "%s_9.png" % a.part))
+    tiles = []
+    for im in (part, res):
+        bg = Image.new("RGBA", (im.shape[1], im.shape[0]), GREY + (255,))
+        bg.alpha_composite(Image.fromarray(im))
+        ys, xs = np.nonzero(on)
+        tiles.append(bg.crop((xs.min(), ys.min(), xs.max() + 1, ys.max() + 1)))
+    sheet = Image.new("RGB", (tiles[0].width * 2 + 8, tiles[0].height), (40, 40, 48))
+    sheet.paste(tiles[0].convert("RGB"), (0, 0))
+    sheet.paste(tiles[1].convert("RGB"), (tiles[0].width + 8, 0))
+    sheet.save(os.path.join(fixd, "%s.jpg" % a.part), quality=88)
+    print("%s: %d grey px recoloured from %s's %d showing colours -> candidate 9" % (a.part, int(grey.sum()), a.recolor_grey, len(cols)), flush=True)
+    return 0
+
+
 def inpaint_lines(j3, canvas, mask, line_img, pos, neg, seed, denoise):
     """heroine_j3.img2img's inpaint, held to line art (workflow inpaint_lines: the union ControlNet)"""
     import uuid
@@ -690,6 +737,9 @@ def main():
                          "from <figure>, default views folder's figure.png) laid back on the plate; a back view is "
                          "flipped (hair behind the body seen from the front is the back view mirrored)")
     ap.add_argument("--figure", default="", help="the picture multiview.py was given (to lay its views back on the plate)")
+    ap.add_argument("--recolor-grey", default="",
+                    help="<layer>: the part's grey / washed-out pixels take that layer's showing colours by brightness "
+                         "(hidden back hair painted grey, recoloured like the front hair); no AI; candidate 9")
     ap.add_argument("--move-hair", action="store_true",
                     help="hair a clothes layer took over (locks lying on a cape of the same red): blocks between the "
                          "plate's lines that hold the hair's grey shading, above --ycut, move to part_side_hair.png; "
@@ -752,6 +802,8 @@ def main():
     if a.mirror:
         part = mirrored(a.part, st, pv, (part.shape[1], part.shape[0]))
     shape = lines = None
+    if a.recolor_grey:
+        return recolor_grey(a, ld, st, meta)
     if a.flat:
         return flat_fill(a, ld, st, meta)
     if a.split_front:

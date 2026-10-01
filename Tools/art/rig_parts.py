@@ -208,11 +208,13 @@ def give_to_body(arrs, piece, skip):
 
 def adopt_crumbs(arrs):
     """small bits of body layers stuck to a moving piece (fingers the split left in the dress, a strip of upper arm
-    along the body) move with that piece"""
+    along the body) move with that piece. Hair is never a crumb: it hangs from the head, not from an arm (a lock
+    lying over an arm was taken into the upper arm, 2026-10-02)"""
     import cv2
+    import part_names as P
     for pn in [n for n in arrs if moving(n) and n != "objects"]:
         ring = cv2.dilate((arrs[pn][..., 3] > 128).astype(np.uint8), np.ones((9, 9), np.uint8)) > 0
-        for bn in [n for n in arrs if not moving(n) and n != "hidden"]:
+        for bn in [n for n in arrs if not moving(n) and n != "hidden" and P.pack_of(n) != "hair"]:
             m = (arrs[bn][..., 3] > 128).astype(np.uint8)
             n_, lab, st, _ = cv2.connectedComponentsWithStats(m, connectivity=8)
             for i in range(1, n_):
@@ -303,7 +305,8 @@ def paint_hidden(src, arrs, meta, holes, hero, series):
     flat, _ = L.flat(body)
     grown = cv2.dilate(holes.astype(np.uint8), np.ones((7, 7), np.uint8)) > 0
     pos = j3.prompt_for(hero, series if series in j3.OUTFITS[hero] else "-", "no arms visible, clothes and body only")
-    out = np.asarray(L.inpaint(flat, grown, pos, "arm, arms, hand, hands, fingers, skin strip, staff, stick, wooden pole, weapon", seed=11,
+    out = np.asarray(L.inpaint(flat, grown, pos, "arm, arms, hand, hands, fingers, skin strip, staff, stick, wooden pole, weapon, "
+                               "leg, legs, thigh, thighs, bare legs, knee", seed=11,
                                denoise=0.9).convert("RGB"))
     # where the model painted the backdrop (a gap between arm and body shows the background), nothing is behind
     backdrop = np.abs(out.astype(int) - np.array(L.GREY)).sum(2) < 40
@@ -704,8 +707,28 @@ def run(hero, series, weapon_pts=None, not_pts=None, weapon_lines=None, match_pl
             leg_under |= a[..., 3] > 128
     wide = cv2.morphologyEx(body_cov.astype(np.uint8), cv2.MORPH_CLOSE, np.ones((61, 61), np.uint8)) > 0
     holes |= leg_under & wide & ~body_cov & fig
+    # under a leg the AI draws the leg again (the hole has a leg's shape, a slit dress around it; 2026-10-02, two tries
+    # with legs in the negative prompt): those holes are continued from the cloth beside them instead (no AI)
+    leg_holes = holes & leg_under
+    holes &= ~leg_under
     if holes.sum() > 50:
         paint_hidden(src, arrs, meta, holes, hero, series)
+    if leg_holes.sum() > 50:
+        base = Image.new("RGBA", src.size, (0, 0, 0, 0))
+        for p in meta["order_back_to_front"]:
+            if not moving(p["name"]) and p["name"] != "objects-back" and p["name"] in arrs:
+                base.alpha_composite(Image.fromarray(arrs[p["name"]]))
+        ba = np.asarray(base)
+        rgb = cv2.cvtColor(ba[..., :3].copy(), cv2.COLOR_RGB2BGR)
+        fill = cv2.cvtColor(cv2.inpaint(rgb, (leg_holes | ~(ba[..., 3] > 128)).astype(np.uint8) * 255, 9, cv2.INPAINT_TELEA),
+                            cv2.COLOR_BGR2RGB)
+        if "hidden" not in arrs:
+            arrs["hidden"] = np.zeros_like(ba)
+            first = next(k for k, p in enumerate(meta["order_back_to_front"]) if moving(p["name"]))
+            meta["order_back_to_front"].insert(first, {"name": "hidden", "file": "part_hidden.png", "depth": 0.0})
+        arrs["hidden"][leg_holes, :3] = fill[leg_holes]
+        arrs["hidden"][leg_holes, 3] = 255
+        print("under the legs: continued from the cloth beside them: %d px" % leg_holes.sum(), flush=True)
     # the band where an upper arm lay against the body: continue the body from right beside it (no AI: next to skin the
     # paint echoed the arm, live2d's ghost check), and fill the armpit gap next to the body the same way
     body_img = Image.new("RGBA", src.size, (0, 0, 0, 0))
