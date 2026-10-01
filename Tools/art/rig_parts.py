@@ -304,10 +304,13 @@ def paint_hidden(src, arrs, meta, holes, hero, series):
             body.alpha_composite(Image.fromarray(arrs[p["name"]]))
     flat, _ = L.flat(body)
     grown = cv2.dilate(holes.astype(np.uint8), np.ones((7, 7), np.uint8)) > 0
-    pos = j3.prompt_for(hero, series if series in j3.OUTFITS[hero] else "-", "no arms visible, clothes and body only")
-    out = np.asarray(L.inpaint(flat, grown, pos, "arm, arms, hand, hands, fingers, skin strip, staff, stick, wooden pole, weapon, "
-                               "leg, legs, thigh, thighs, bare legs, knee", seed=11,
-                               denoise=0.9).convert("RGB"))
+    if NO_AI:   # the body beside the hole carried into it (OpenCV), no image model
+        rgb = cv2.cvtColor(np.asarray(flat.convert("RGB")).copy(), cv2.COLOR_RGB2BGR)
+        out = cv2.cvtColor(cv2.inpaint(rgb, grown.astype(np.uint8) * 255, 9, cv2.INPAINT_TELEA), cv2.COLOR_BGR2RGB)
+    else:
+        pos = j3.prompt_for(hero, series if series in j3.OUTFITS[hero] else "-", "no arms visible, clothes and body only")
+        out = np.asarray(L.inpaint(flat, grown, pos, "arm, arms, hand, hands, fingers, skin strip, staff, stick, wooden pole, "
+                                   "weapon, leg, legs, thigh, thighs, bare legs, knee", seed=11, denoise=0.9).convert("RGB"))
     # where the model painted the backdrop (a gap between arm and body shows the background), nothing is behind
     backdrop = np.abs(out.astype(int) - np.array(L.GREY)).sum(2) < 40
     keep = holes & ~backdrop
@@ -323,6 +326,7 @@ def paint_hidden(src, arrs, meta, holes, hero, series):
 
 
 LEG = ("thigh", "shin", "foot")
+NO_AI = False   # --no-ai: nothing painted by an image model; hidden areas are continued from what lies beside them
 SKIRT = ("bottomwear",)   # stays on the pelvis, in front of the legs and behind the arms
 
 
@@ -597,7 +601,7 @@ def run(hero, series, weapon_pts=None, not_pts=None, weapon_lines=None, match_pl
         # the whole weapon: its traced line, the longest one carried down to the feet (the plate hides the foot of
         # a staff behind the dress), at its own width; what the plate doesn't show there is painted in on its own
         corridor = weapon_corridor(lines, half, fig)
-        hidden_w = paint_weapon(wa, corridor & ~w, hero, src.size)
+        hidden_w = np.zeros_like(wa) if NO_AI else paint_weapon(wa, corridor & ~w, hero, src.size)
         extend_down(wa, hidden_w, corridor)
         # only what the figure hides: outside it the painted stretch would show at rest where the plate has none
         # (a staff carried to the floor beside the train), so the weapon keeps the plate's own length there
@@ -801,7 +805,10 @@ if __name__ == "__main__":
     ap.add_argument("--weapon", default="")
     ap.add_argument("--not", dest="nots", default="")
     ap.add_argument("--match-plate", action="store_true", help="give the layers that show the plate's colours")
+    ap.add_argument("--no-ai", action="store_true", help="no image model: the body under the pieces is continued from "
+                                                          "beside it, the weapon only carried across and down")
     a = ap.parse_args()
     pts = lambda s: [tuple(int(v) for v in p.split(",")) for p in s.split(";") if p]
     lines = [pts(part) for part in a.weapon.split("|") if part]   # "x,y;x,y|x,y": separate traced lines
+    NO_AI = a.no_ai
     run(a.hero, a.series, [q for ln in lines for q in ln], pts(a.nots), lines, a.match_plate)
