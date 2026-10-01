@@ -23,6 +23,7 @@ var _h := 100.0               ## the model's half height (model units): motion s
 var _missing := {}            ## motion -> {parameter: true} it wanted and the model lacks
 var _motion := ""
 var _defaults := {}           ## parameter -> its value as loaded
+var _wave := "Right"          ## the arm that waves: the free one when the other holds a weapon that shows
 
 
 func _ready() -> void:
@@ -53,6 +54,18 @@ func _ready() -> void:
 			var n: Dictionary = puppet.nodes[uuid]
 			if n["name"] in OBJECT_PARTS or String(n["name"]).begins_with("Other "):
 				n["enabled"] = false
+	# a weapon in the right hand would swing over the head and through the body (Freya's staff, 2026-10-02): wave
+	# with the free hand
+	var weapon_on := false
+	var grip := ""
+	for uuid in puppet.nodes:
+		var n: Dictionary = puppet.nodes[uuid]
+		if n["name"] == "Weapon" and n["enabled"]:
+			weapon_on = true
+		if String(n["name"]).begins_with("Grip "):
+			grip = String(n["name"]).substr(5)
+	if weapon_on and grip == "Right":
+		_wave = "Left"
 	for m in MOTIONS:
 		if picked.is_empty() or picked.has(m[0]):
 			await _record(m[0])
@@ -195,15 +208,15 @@ func _legs(step: float, hip: float, knee: float) -> void:
 		_limb("Leg:: %s:: Ankle" % sd, 0.3 * sin(ph - 0.6) * sg, "腳掌（腳踝）")
 
 
-func _m_wave(t: float) -> void:   # the right arm up and waving; arm pieces (shoulder / elbow) when the rig has them
+func _m_wave(t: float) -> void:   # one arm up and waving (the free one, _wave); arm pieces when the rig has them
 	var w := sin(t * TAU * 1.5)
-	_put("Arm:: Right:: Move", w)
-	if puppet.param_by_name.has("Arm:: Right:: Shoulder"):
-		_put("Arm:: Right:: Shoulder", 0.8)   # up and out; the forearm turns on further outwards, pointing up
-		_put("Arm:: Right:: Elbow", 0.6 + 0.4 * w)
+	_put("Arm:: %s:: Move" % _wave, w)
+	if puppet.param_by_name.has("Arm:: %s:: Shoulder" % _wave):
+		_put("Arm:: %s:: Shoulder" % _wave, 0.8)   # up and out (+1 is outwards on either side); the forearm on further
+		_put("Arm:: %s:: Elbow" % _wave, 0.6 + 0.4 * w)
 	else:
 		_missing[_motion] = _missing.get(_motion, {})
-		_missing[_motion]["Arm:: Right:: Shoulder / Elbow（手臂分段，舉手要用）"] = true
+		_missing[_motion]["Arm:: %s:: Shoulder / Elbow（手臂分段，舉手要用）" % _wave] = true
 	_put("Head:: Roll", 0.3 * w)
 	_put("Mouth:: Open", 0.3)
 
