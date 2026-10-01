@@ -99,7 +99,7 @@
 
 ## 5. 圖層名字
 
-綁定、分包、擺動都靠名字判斷。最後一欄是這一層從哪裡來：See-through 原本就有的，或我們的工具加的。
+綁定、分包、擺動都靠名字判斷，規則統一寫在 `Tools/art/part_names.py`（每個名字的中文名、哪一包、必有、成對、提示詞描述、該在哪、掛在哪、怎麼擺）。下表是摘要；最後一欄是這一層從哪裡來：See-through 原本就有的，或我們的工具加的。
 
 | 名字 | 是什麼 | 誰加的 |
 |---|---|---|
@@ -121,7 +121,8 @@
 | `leftover` | 立繪有、各層都沒有的（雜物） | `to_plate` |
 | `side_hair` | 從雜物層、衣服層分出來的長髮 | `object_fix --sort-hair`、`--move-hair` |
 | `side_lock-l/r`、`hair_ends` | 側髮、髮尾 | `object_fix --split-hair` |
-| `chest`、`cape`、`sleeve-l/r`、`ponytail`、`ahoge`、`ribbon`、`earring`、`tassel`、`quiver` | 胸、披風、寬袖、馬尾、呆毛、髮帶、耳環、流蘇、箭筒 | `object_fix --carve`（名字決定綁定時怎麼擺） |
+| `eyewear`、`earwear`、`neckwear`、`tail`、`wings` | 眼鏡、耳飾、領飾、尾巴、翅膀 | See-through（眼鏡、耳飾掛頭上；領飾、尾巴、翅膀掛身體） |
+| `chest`、`cape`、`sleeve-l/r`、`bangs`、`ponytail`、`ahoge`、`ribbon`、`earring`、`tassel`、`quiver` | 胸、披風、寬袖、馬尾、呆毛、髮帶、耳環、流蘇、箭筒 | `object_fix --carve`（名字決定綁定時怎麼擺） |
 
 ## 6. `.inx` 模型檔
 

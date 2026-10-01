@@ -26,49 +26,19 @@ from PIL import Image, ImageDraw
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from inx_rig import WORK, load_joints, src_dir   # noqa: E402
 
-PACKS = [("face", "臉部（五官、臉部飾品、帽子、脖子、領口）"), ("hair", "頭髮"), ("clothes", "軀幹與衣物"), ("limbs", "四肢（連鞋子）"),
-         ("weapon", "武器"), ("other", "其他物件")]
-EXACT = {"face": "face", "nose": "face", "mouth": "face", "headwear": "face", "headwear-front": "face", "side_hair": "hair", "neck": "face", "irides": "face",
-         "front_hair": "hair", "back_hair": "hair",
-         "topwear": "clothes", "bottomwear": "clothes", "footwear": "limbs", "hidden": "clothes", "hidden-pelvis": "clothes",
-         "chest": "clothes", "abdomen": "clothes", "belly": "clothes",
-         "legwear": "limbs", "objects": "weapon", "objects-back": "weapon", "leftover": "other"}
-PREFIX = [("eyewhite-", "face"), ("irides-", "face"), ("eyelash-", "face"), ("eyebrow-", "face"), ("ears", "face"),
-          ("handwear-", "limbs"), ("upperarm-", "limbs"), ("forearm-", "limbs"), ("hand-", "limbs"),
-          ("thigh-", "limbs"), ("shin-", "limbs"), ("foot-", "limbs")]
-# layers every plate must have (22b step 2, "必有"): [pack, name shown, names or prefixes that satisfy it]
-REQUIRED = [("face", "臉 face", ["face"]), ("face", "眼白 eyewhite", ["eyewhite-"]), ("face", "虹膜 irides", ["irides"]),
-            ("face", "睫毛 eyelash", ["eyelash-"]), ("face", "眉毛 eyebrow", ["eyebrow-"]), ("face", "嘴 mouth", ["mouth"]),
-            ("face", "脖子 neck", ["neck"]), ("hair", "前髮 front_hair", ["front_hair"]), ("hair", "後髮 back_hair", ["back_hair"]),
-            ("clothes", "上衣 topwear", ["topwear"]),
-            ("limbs", "上臂 upperarm", ["upperarm-"]), ("limbs", "前臂 forearm", ["forearm-"]), ("limbs", "手 hand", ["hand-"]),
-            ("limbs", "大腿 thigh", ["thigh-"]), ("limbs", "小腿 shin", ["shin-"]), ("limbs", "腳掌 foot", ["foot-"]),
-            ("weapon", "武器 objects", ["objects"])]   # every hero holds a weapon
-# left / right pairs: both must be there, a hidden one painted in (a big motion shows it otherwise)
-PAIRS = [("face", "眼白", "eyewhite-"), ("face", "虹膜", "irides-"), ("face", "睫毛", "eyelash-"), ("face", "眉毛", "eyebrow-"),
-         ("face", "耳朵", "ears-"), ("limbs", "上臂", "upperarm-"), ("limbs", "前臂", "forearm-"), ("limbs", "手", "hand-"),
-         ("limbs", "大腿", "thigh-"), ("limbs", "小腿", "shin-"), ("limbs", "腳掌", "foot-")]
+import part_names as P   # noqa: E402   every layer name: its pack, required, pairs (Tools/art/part_names.py)
+
+PACKS = P.PACKS
+REQUIRED = [(g, what, [kind]) for g, what, kind in P.required()]   # [pack, name shown, kinds that satisfy it]
+PAIRS = P.pairs()   # left / right pairs: both must be there, a hidden one painted in (a big motion shows it otherwise)
 PAIR_AREA = 2.0       # left / right parts this many times apart in size, or
 PAIR_COLOR = 45       # this far apart in mean colour (sum of RGB), are not a matching pair
 TILE = 220
 COLOR_OFF = 90       # sum of RGB differences that counts as a wrong colour (as rig_check)
 
 
-CARVED = (("side_lock", "hair"), ("hair_ends", "hair"), ("ponytail", "hair"), ("ahoge", "hair"), ("bangs", "hair"),
-          ("ribbon", "face"), ("earring", "face"), ("chest", "clothes"), ("cape", "clothes"), ("sleeve", "clothes"),
-          ("quiver", "other"), ("tassel", "weapon"))   # pieces cut out by object_fix --carve / --split-hair
-
-
 def pack_of(name):
-    if name in EXACT:
-        return EXACT[name]
-    for p, g in CARVED:
-        if name.startswith(p):
-            return g
-    for p, g in PREFIX:
-        if name.startswith(p):
-            return g
-    return "other"
+    return P.pack_of(name)
 
 
 def checker(w, h, c=16):
@@ -94,6 +64,7 @@ def main(hero, series):
     fig = pa[..., 3] > 128
     joints = load_joints(os.path.join(ld, "fig_joints.json")) if os.path.exists(os.path.join(ld, "fig_joints.json")) else {}
     neck_y = int(joints["neck"][1]) if joints.get("neck") else None
+    pivots = meta.get("pivots") or {}
 
     # the images of every part; "leftover" splits at the neck: what sits on the head (a ribbon) goes with the face
     imgs = {n: np.asarray(Image.open(os.path.join(st, "part_%s.png" % n)).convert("RGBA")) for n in order}
@@ -107,7 +78,8 @@ def main(hero, series):
         imgs["leftover-head"], imgs["leftover"] = top, low
         packs["leftover-head"] = "face"
 
-    missing = [(g, what) for g, what, keys in REQUIRED if not any(n == k or n.startswith(k) for n in order for k in keys)]
+    kinds = {P.lookup(n).kind if P.lookup(n) else n for n in order}
+    missing = [(g, what) for g, what, keys in REQUIRED if not any(k in kinds for k in keys)]
     half = []
     for g, what, pre in PAIRS:
         sides = {sd for sd in ("l", "r") if pre + sd in order}
@@ -149,6 +121,9 @@ def main(hero, series):
                 w.append("幾乎是空的")
             if px and off > 0.05 * px:
                 w.append("%d%% 在人物外面" % (100 * off // px))
+            pw = P.position_warning(n, a[..., 3], joints, pivots)   # far from where its name says it belongs
+            if pw:
+                w.append(pw)
             warns += ["%s：%s" % (n, x) for x in w]
             ys, xs = np.nonzero(a[..., 3] > 8)
             t = checker(TILE, TILE)

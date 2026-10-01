@@ -35,7 +35,7 @@ main(hero, series)
 | 5 | `weapon` 武器 | `objects`、`objects-back`、`tassel` |
 | 6 | `other` 其他 | `leftover` 脖子以下的部分、`quiver`，以及不認得的層 |
 
-`pack_of(name)` 依序查：完全相同的名字（`EXACT`）→ 切出來的零件前綴（`CARVED`）→ 一般前綴（`PREFIX`）→ 都不是就歸「其他」。`leftover` 以 `fig_joints.json` 的脖子高度切成兩半，上半歸臉部。
+分類、必有、成對都讀共用的名字表 `Tools/art/part_names.py`（`pack_of`、`required`、`pairs`）：完全相同的名字優先，其次是最長的前綴，都不是就歸「其他」。新增一種圖層只改那張表。`leftover` 以 `fig_joints.json` 的脖子高度切成兩半，上半歸臉部。
 
 ## 2. 自動找的問題
 
@@ -45,6 +45,7 @@ main(hero, series)
 - **成對的少一邊**（`PAIRS`）：眼白、虹膜、睫毛、眉毛、耳朵、上臂、前臂、手、大腿、小腿、腳掌，只有一邊時提示要補畫。
 - **左右對不起來**：大小差 2 倍以上（`PAIR_AREA`），或平均顏色差超過 45（`PAIR_COLOR`，RGB 差的總和）。
 - **個別部件**：幾乎是空的（15 像素以下）；超過 5% 在人物外面。
+- **位置不對**（`part_names.position_warning`）：臉部的東西有三成以上在脖子再往下半個臉高以下；四肢零件有四分之一以上離自己的骨頭（`pivots`，沒有就用 `fig_joints.json`）超過 0.6 個臉高。用來抓「名字跟內容對不上」，例如手裡混進了前臂和箭筒。離骨頭不遠的混入（上臂混進一塊上衣）抓不到，還是要靠看圖。
 
 ## 3. 兩種檢查圖
 

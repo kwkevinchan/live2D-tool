@@ -29,16 +29,12 @@ from scipy import ndimage
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from inx_rig import WORK, load_joints   # noqa: E402
+import part_names as P               # noqa: E402
 
 GREY = (200, 200, 205)
 MODEL_SIDE = 1024      # the longer side of what the model paints
 MARGIN = 48
-# what each part is, for the prompt (the hero's look and outfit come from her character LoRA)
-DESC = {"upperarm": "upper arm, shoulder, sleeve", "forearm": "forearm, sleeve", "hand": "hand, fingers",
-        "thigh": "thigh, leg", "shin": "lower leg, knee", "foot": "foot, shoe", "objects": "weapon",
-        "objects-back": "weapon", "topwear": "clothes", "bottomwear": "skirt", "front_hair": "bangs, hair",
-        "back_hair": "long hair", "face": "face", "neck": "neck", "headwear": "hat", "eyebrow": "eyebrow",
-        "eyelash": "eyelashes", "eyewhite": "eye", "irides": "eye iris", "ears": "ear", "hidden": "body, clothes"}
+# what each part is, for the prompt: part_names.py "desc" (the hero's look and outfit come from her character LoRA)
 # the skeleton reach of a limb piece: (from pivot, to pivot, how far past "to" it goes, as a share of the bone)
 REACH = {"upperarm": ("shoulder", "elbow", 0.12), "forearm": ("elbow", "wrist", 0.1), "hand": ("wrist", None, 0.0),
          "thigh": ("hip", "knee", 0.1), "shin": ("knee", "ankle", 0.08), "foot": ("ankle", "foot", 0.1)}
@@ -863,7 +859,7 @@ def main():
         os.environ["ART_LORA"] = "%s:0.8" % K.LORA[a.hero]
         os.environ["ART_LORA_TRIGGER"] = K.TRIGGER[a.hero]
     import heroine_j3 as j3
-    desc = DESC.get(kind_of(a.part), kind_of(a.part).replace("_", " "))
+    desc = P.desc(a.part, kind_of(a.part).replace("_", " "))
     if kind_of(a.part) in ("objects", "objects-back"):
         desc = K.HOLD.get(a.hero, "a weapon").replace("holding ", "")
     desc = a.desc or desc

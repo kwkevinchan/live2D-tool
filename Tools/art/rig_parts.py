@@ -80,11 +80,13 @@ def geodesic(mask, start):
     return d
 
 
-def cut_arm(arm_rgba, shoulder, wrist_hint):
+def cut_arm(arm_rgba, shoulder, wrist_hint, elbow_hint=None):
     """upper arm, forearm, hand and the joints. The walk starts at the shoulder; the hand's end is the farthest point
-    of the piece that holds the wrist (a drape can hang lower than the hand); the elbow sits at half the walk to it and
-    the wrist at 0.8. Each pixel goes to the bone it is nearest to (a drape by the upper arm moves with the upper arm),
-    and each piece gets a round cap past its joint so a turn opens no crack"""
+    of the piece that holds the wrist (a drape can hang lower than the hand). The elbow and the wrist are the detected
+    ones (fig_joints.json, checked at L1) when they lie on the arm in walking order; else the elbow sits at half the
+    walk to the hand's end and the wrist at 0.8 (a long sleeve or a jacket put those too far down, 2026-10-02). Each
+    pixel goes to the bone it is nearest to (a drape by the upper arm moves with the upper arm), and each piece gets a
+    round cap past its joint so a turn opens no crack"""
     import cv2
     m = arm_rgba[..., 3] > 128
     # a sleeve can cut the arm into pieces (freya's left arm: drape above, forearm below); join them before walking
@@ -113,6 +115,22 @@ def cut_arm(arm_rgba, shoulder, wrist_hint):
     at = lambda f: (int(path[int(f * (len(path) - 1))][1]), int(path[int(f * (len(path) - 1))][0]))
     elbow, wrist, end = at(0.5), at(0.8), (int(end_i[1]), int(end_i[0]))
     d = np.where(joined, geodesic(joined, shoulder), -1)   # the unmasked walk (the path above needs the joins)
+    # the detected joints, when they lie on the arm (within a few px of it) and in order along the walk
+    jy, jx = np.nonzero(joined)
+
+    def on_arm(p):
+        if p is None:
+            return None
+        k = int(np.argmin(np.hypot(jx - p[0], jy - p[1])))
+        return (int(jx[k]), int(jy[k])) if np.hypot(jx[k] - p[0], jy[k] - p[1]) <= 20 else None
+    de, dw = on_arm(elbow_hint), on_arm(wrist_hint)
+    walk = lambda q: d[q[1], q[0]]
+    if de and dw and 0.2 * dmax < walk(de) < walk(dw) < walk(end) + 1:
+        elbow, wrist = de, dw
+        print("arm: detected elbow %s and wrist %s" % (elbow, wrist), flush=True)
+    else:
+        print("arm: elbow %s and wrist %s from the walk (detected ones off the arm or out of order: %s, %s)"
+              % (elbow, wrist, elbow_hint, wrist_hint), flush=True)
 
     def seg_dist(p, q):
         yy, xx = np.mgrid[:m.shape[0], :m.shape[1]]
@@ -617,7 +635,7 @@ def run(hero, series, weapon_pts=None, not_pts=None, weapon_lines=None, match_pl
         key = "handwear-%s" % side
         if key not in arrs:
             continue
-        pieces, joints = cut_arm(arrs[key], j["shoulder_%s" % side], j["wrist_%s" % side])
+        pieces, joints = cut_arm(arrs[key], j["shoulder_%s" % side], j["wrist_%s" % side], j.get("elbow_%s" % side))
         i = next(k for k, p in enumerate(order) if p["name"] == key)
         new = [{"name": "%s-%s" % (n, side), "file": "part_%s-%s.png" % (n, side), "depth": order[i]["depth"]}
                for n in ("upperarm", "forearm", "hand")]

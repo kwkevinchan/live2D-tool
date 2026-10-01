@@ -155,6 +155,7 @@ Root
 - `leftover` 以脖子高度切開：上半是 `Head Accessory`（髮帶等，跟頭走），下半是 `Body Accessory`（跟身體走）。
 - 每隻眼睛一個組合：眼白＋虹膜（`ClipToLower`，只畫在眼白上）。側臉只有一層虹膜時，取眼白範圍內的部分。睫毛、眉毛另外放。
 - 閉眼圖 `eyes_closed.png`、張嘴圖（`mouth_a.png` 在 `mouth.json` 的嘴巴範圍裡的部分）有的話加進去。
+- 名字表 `part_names.py` 裡 `attach="head"` 的層都掛在頭上：髮束（`side_lock`、`bangs`、`hair_ends`、`ponytail`、`ahoge`）、`ribbon`、`earring`、`eyewear`（眼鏡）、`earwear`（耳飾）。前後照表裡的 `z`（`depth` 就用 `head_depth`），有 `swing` 的各自加擺。
 - 頭上的前後順序（數字越大越後面，相對 `Head`）：
 
   | 部件 | zsort |
@@ -176,6 +177,7 @@ Root
 - **`body_depths`**：身體各層（`BODY_ORDER`：`hidden`、腿、鞋、下著、`hidden-pelvis`、脖子、手臂、上衣）的前後照 `parts.json` 的順序排，在 0.5～0.35 之間平均分配。理由：一層只在它排最前面的地方是立繪的顏色，換別的順序會露出補畫的猜測。
 - 依序加入 `Hidden Body`、`Legs`、`Footwear`、`Bottomwear`、`Hidden Pelvis`、`Neck`、`Topwear`（空的層跳過）。`hidden` 本來就是補畫的，不經過 `real`。
 - `chest`（`object_fix --carve chest --carve-copy` 切的）放在上衣正前面；`cape` 放在 0.65（身體後面、後髮前面）。
+- 名字表 `part_names.py` 裡 `attach="body"` 的層：`neckwear`（領飾，前後照 `parts.json`，轉頭時跟領口一起滑）、`tail`（0.62，`tail` 擺）、`wings`（0.66，`wings` 擺），要通過 `real` 才掛上。
 - 不認得、但通過 `real` 的層，以 `Other <名字>` 掛在身體上（0.36）；`Body Accessory` 0.34。
 
 ### 4-5. 手臂與武器
@@ -212,6 +214,8 @@ Root
 | `sleeve` | 110 | 1.1 | 0.35 | 0.35 | 寬袖 `sleeve-*` | 手肘 |
 | `tassel` | 60 | 1.8 | 0.4 | 0.4 | 武器上的流蘇 | 握點 |
 | `accessory` | 60 | 2.0 | 0.45 | 0.25 | 身上的小東西（`Body Accessory`、`Other …`） | 它的上緣 |
+| `tail` | 120 | 1.2 | 0.35 | 0.3 | 尾巴 | 它的上緣 |
+| `wings` | 150 | 0.9 | 0.4 | 0.12 | 翅膀 | 它的上緣 |
 
 權重多半是 `below`：從某條線往下由 0 長到 1（1.5 次方），越下面擺越多。
 

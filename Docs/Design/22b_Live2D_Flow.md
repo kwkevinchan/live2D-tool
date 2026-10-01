@@ -51,7 +51,7 @@ Live 2D 工作室（`Tools/live2d_studio/app.py`，`http://127.0.0.1:7861`）每
 
 | 檢查點 | 時間點 | 看哪張圖 | 看什麼 | 沒通過怎麼辦 |
 |---|---|---|---|---|
-| **L0** 立繪 | 選好立繪、開始拆之前 | `full.png`（關鍵姿勢另看 `review_plate.py cand` 的候選表） | 明確是成年人、沒有裸露（內容界線）；全身在畫面裡；底色乾淨；手腳和手指的數量對；只有一把武器、拿在手上；沒有畫上特效 | 換一張候選，或退回美術工具箱重畫 |
+| **L0** 立繪 | 選好立繪、開始拆之前 | `full.png`（關鍵姿勢另看 `review_plate.py cand` 的候選表） | 全身在畫面裡；底色乾淨；手腳和手指的數量對；沒有畫上特效 | 換一張候選，或退回美術工具箱重畫 |
 | **L1** 骨架 | `live_layers.py parts` 之後 | `fig_overview.png`（彩色部位＋關節點） | 每個關節點在對的位置（盔甲下的手腕常抓錯）；握點在拿武器的那隻手；臉的位置對 | 手動改 `fig_joints.json`（原本的另存一份），再往下做 |
 | **L2** 拆圖層 | `see_through.py` 之後 | `st/_stack_vs_plate.jpg`、印出的圖層清單；關鍵姿勢另看 `review_plate.py` 的 `review.jpg` | 有臉；兩隻眼睛分開；沒有發明出來的層（翅膀、多一頂帽子）；長髮沒有被丟進雜物；武器、帽子有被認出來 | `object_fix --make-face`／`--split-lr`／`--drop-part`／`--sort-hair`；整張拆壞就換種子重拆 |
 | **L3** 切零件 | `rig_parts.py` 之後，先跑一次 `split_groups.py` | `parts_4.jpg`（四肢）、`parts_5.jpg`（武器）、`parts_3.jpg` 裡的 `hidden` | 手臂、腿在關節處切開，每段像它的名字；武器是完整的一根、沒有夾帶別的東西；`hidden` 補畫的地方沒有手臂殘影、灰色糊塊 | 改 `fig_joints.json` 的關節或 `--weapon` 描點後重切；`hidden` 用 `object_fix --grow grey` |

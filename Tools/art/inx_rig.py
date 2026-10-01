@@ -32,6 +32,9 @@ import sys
 import numpy as np
 from PIL import Image
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import part_names as P   # noqa: E402   which layer hangs where and how it swings (Tools/art/part_names.py)
+
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 import config as _C   # live2d.toml
 WORK = _C.WORK
@@ -46,7 +49,8 @@ SWING = {   # 22b follow table, "swings (physics)": (pendulum length px, frequen
     "accessory": (60.0, 2.0, 0.45, 0.25), "lock": (130.0, 1.2, 0.4, 0.22),
     "cape": (200.0, 0.8, 0.28, 0.4), "ends": (170.0, 0.9, 0.3, 0.3), "ponytail": (150.0, 1.0, 0.3, 0.35),
     "ahoge": (40.0, 2.6, 0.4, 0.35), "ribbon": (50.0, 2.0, 0.45, 0.3), "sleeve": (110.0, 1.1, 0.35, 0.35),
-    "tassel": (60.0, 1.8, 0.4, 0.4), "chest": (30.0, 3.0, 0.55, 0.05)}
+    "tassel": (60.0, 1.8, 0.4, 0.4), "chest": (30.0, 3.0, 0.55, 0.05),
+    "tail": (120.0, 1.2, 0.35, 0.3), "wings": (150.0, 0.9, 0.4, 0.12)}
 SLEEVE_FOLLOW = 0.45   # how much of the upper arm's turn the top beside the shoulder takes (22b: sleeves pulled up)
 SHORTS_FOLLOW = 1.0    # shorts go with the thigh all the way
 COLLAR_YAW = 0.35      # the collar slides this share of the head's turn
@@ -474,7 +478,7 @@ def st_usable(hero, series):
     return True
 
 
-BODY_ORDER = ["hidden", "legwear", "thigh-l", "thigh-r", "footwear", "bottomwear", "hidden-pelvis", "neck", "handwear-l", "handwear-r",
+BODY_ORDER = ["hidden", "legwear", "thigh-l", "thigh-r", "footwear", "bottomwear", "hidden-pelvis", "neck", "neckwear", "handwear-l", "handwear-r",
               "upperarm-l", "upperarm-r", "topwear"]   # back to front
 WAIST_TURN, HIP_TURN, KNEE_TURN, ANKLE_TURN = 0.6, 1.2, 1.6, 0.8   # radians at the parameters' ends
 GOWN_HIP, GOWN_KNEE = 0.3, 0.5   # under a skirt past the knees the legs only move inside it
@@ -668,17 +672,20 @@ def rig_st(hero, series, out=None):
         head_kids.append(hp(hat_front))
     if left_head is not None:
         head_kids.append(hp(add("Head Accessory", left_head, -0.2)))
-    # hair in pieces and things hanging from the head (object_fix --split-hair / --carve): each swings on its own below
+    # hair in pieces and things on the head (object_fix --split-hair / --carve, See-through's eyewear / earwear): the
+    # layers part_names.py hangs on the head; those with a swing kind swing on their own below where they hang
     head_swing = []   # (part, kind, hung at (x, y) in the picture)
-    for n in sorted(f[5:-4] for f in os.listdir(st) if f.startswith("part_") and f.endswith(".png")):
-        kind = next((k for k in ("side_lock", "ahoge", "ribbon", "earring", "ponytail", "hair_ends") if n.startswith(k)), None)
-        if kind is None or np.asarray(part_img(n))[..., 3].max() <= 8:
+    layer_names = sorted(f[5:-4] for f in os.listdir(st) if f.startswith("part_") and f.endswith(".png"))
+    for n in layer_names:
+        e = P.lookup(n)
+        if e is None or e.attach != "head" or np.asarray(part_img(n))[..., 3].max() <= 8:
             continue
-        z = 1.1 if kind == "hair_ends" else head_depth(n)   # the ends stay as far back as the back hair
+        z = e.z if isinstance(e.z, float) else head_depth(n)   # hair ends: as far back as the back hair
         pt = add(n.replace("_", " ").title(), part_img(n), z)
         head_kids.append(hp(pt))
-        top_mid = ((pt.box[0] + pt.box[2]) / 2.0, pt.box[1] if kind != "ahoge" else pt.box[3])
-        head_swing.append((pt, {"side_lock": "lock", "earring": "ribbon", "hair_ends": "ends"}.get(kind, kind), top_mid))
+        if e.swing:
+            top_mid = ((pt.box[0] + pt.box[2]) / 2.0, pt.box[1] if e.swing != "ahoge" else pt.box[3])
+            head_swing.append((pt, e.swing, top_mid))
     phys_back, phys_front = uid(), uid()
     hb = back_hair.box
     pb = node("Back Hair Physics", x=0.0, y=-1.2 * face_h, kind="SimplePhysics")
@@ -709,10 +716,8 @@ def rig_st(hero, series, out=None):
              "legwear", "footwear", "bottomwear", "neck", "topwear", "objects", "objects-back", "handwear-l", "handwear-r", "irides",
              "hidden", "hidden-pelvis"}
     known |= {"%s-%s" % (k, sd) for k in ("upperarm", "forearm", "hand", "thigh", "shin", "foot") for sd in ("l", "r")}
-    carved = [f[5:-4] for f in os.listdir(st) if f.startswith("part_") and f.endswith(".png")
-              and f[5:-4].startswith(("side_lock", "ahoge", "ribbon", "earring", "ponytail", "hair_ends", "chest", "cape",
-                                      "sleeve", "tassel"))]
-    known |= set(carved)
+    # hung by the table (head or body), or by their own code below (chest, cape, sleeve, tassel)
+    known |= {n for n in layer_names if P.lookup(n) and (P.lookup(n).attach or P.lookup(n).kind in ("chest", "cape", "sleeve", "tassel"))}
     chest = cape = None
     if have("chest") and np.asarray(part_img("chest"))[..., 3].max() > 8:   # in front of the top it was cut from
         chest = add("Chest", part_img("chest"), depth["topwear"] - 0.003)
@@ -721,6 +726,15 @@ def rig_st(hero, series, out=None):
         cape = add("Cape", part_img("cape"), BODY_Z[0] + 0.15)   # behind the hair ends (0.6) too: hair lies on the cape
         root_kids.append(pj(cape))
     known |= {"%s-%s" % (k, sd) for k in ("eyewhite", "irides", "eyelash", "eyebrow") for sd in ("l", "r")}
+    body_swing = []   # (part, kind): what the table hangs on the body (a scarf, a tail, wings)
+    for n in layer_names:
+        e = P.lookup(n)
+        if e and e.attach == "body" and real(n):
+            z = depth.get(n, 0.36) if e.z == "body" else e.z
+            kept[n] = add(n.replace("_", " ").title(), part_img(n), z)
+            root_kids.append(pj(kept[n]))
+            if e.swing:
+                body_swing.append((kept[n], e.swing))
     for f in sorted(os.listdir(st)):
         n = f[5:-4] if f.startswith("part_") and f.endswith(".png") else None
         if n and n not in known and real(n):   # anything else See-through finds (and the plate has) stays with the body
@@ -927,6 +941,10 @@ def rig_st(hero, series, out=None):
         ph = pendulum("Side Hair", "lock", (0.0, locks.box[1] - neck[1]))
         head["children"].append(ph)
         swings.append((locks, ph["param"], below(locks, locks.box[1]), SWING["lock"][3] * (locks.box[3] - locks.box[1])))
+    for pt, kind in body_swing:   # a tail, wings: hung at their top
+        ph = pendulum(pt.name, kind, ((pt.box[0] + pt.box[2]) / 2.0 - center[0], pt.box[1] - center[1]))
+        root_kids.append(ph)
+        swings.append((pt, ph["param"], below(pt, pt.box[1]), SWING[kind][3] * (pt.box[3] - pt.box[1])))
     for key, pt in kept.items():   # pouches and trinkets below the neck: hung at their top
         if key == "Body Accessory" or key.startswith("Other "):
             ph = pendulum(pt.name, "accessory", ((pt.box[0] + pt.box[2]) / 2.0 - center[0], pt.box[1] - center[1]))
@@ -970,8 +988,9 @@ def rig_st(hero, series, out=None):
     cw = near(top, neck, 0.5 * face_h)
     yaw.append(deform_binding(top, [[[-YAW_PX * COLLAR_YAW * w, 0.0] for w in cw], [[0.0, 0.0] for _ in cw],
                                     [[YAW_PX * COLLAR_YAW * w, 0.0] for w in cw]]))
-    if "neck" in kept:
-        yaw.append(value_binding(kept["neck"].uuid, "transform.t.x", [-YAW_PX * COLLAR_YAW, 0.0, YAW_PX * COLLAR_YAW]))
+    for n in ("neck", "neckwear"):   # a scarf or a collar ornament slides with the collar
+        if n in kept:
+            yaw.append(value_binding(kept[n].uuid, "transform.t.x", [-YAW_PX * COLLAR_YAW, 0.0, YAW_PX * COLLAR_YAW]))
     blink, look, brows = [], [], []
     for side, (white, iris, lash, brow, comp) in eyes.items():
         yaw.append(value_binding(comp["uuid"], "transform.t.x", [-3.0, 0.0, 3.0]))
