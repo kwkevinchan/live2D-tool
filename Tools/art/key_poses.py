@@ -15,7 +15,6 @@ import sys
 from PIL import Image, ImageDraw
 
 sys.path.insert(0, os.path.dirname(__file__))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "grok"))
 import comfy_gen as cg      # noqa: E402
 import heroine_j3 as j3     # noqa: E402
 import workflows as W       # noqa: E402
@@ -26,6 +25,7 @@ W_, H_ = 832, 1216
 SEEDS = tuple(int(x) for x in os.environ.get("POSE_SEEDS", "61,62,63,64").split(","))
 LORA = {h: c["lora"] for h, c in _C.CHARACTERS.items() if c.get("lora")}   # characters/<id>.toml
 HOLD = {h: c["hold"] for h, c in _C.CHARACTERS.items() if c.get("hold")}   # characters/<id>.toml
+TRIGGER = {h: c.get("trigger") or "%s_tdc" % h for h, c in _C.CHARACTERS.items()}   # the LoRA's trigger word
 # COCO-18: nose, neck, r_sho, r_elb, r_wri, l_sho, l_elb, l_wri, r_hip, r_knee, r_ank, l_hip, l_knee, l_ank,
 #          r_eye, l_eye, r_ear, l_ear  (x, y as a share of the picture; "r" is the character's right)
 _LEGS = [(0.53, 0.52), (0.57, 0.70), (0.59, 0.88), (0.45, 0.52), (0.41, 0.70), (0.38, 0.88)]
@@ -154,7 +154,7 @@ def pose_workflow(strength=0.85, end=0.85):
 
 def cand(hero, action):
     os.environ["ART_LORA"] = "%s:1.0" % LORA[hero]
-    os.environ["ART_LORA_TRIGGER"] = "%s_tdc" % hero
+    os.environ["ART_LORA_TRIGGER"] = TRIGGER[hero]
     d = os.path.join(WORK, "poses", hero, action)
     os.makedirs(d, exist_ok=True)
     outfit = j3.OUTFITS[hero]["-"][0]
@@ -216,7 +216,7 @@ def clear_background(plate, rgba):
 
 
 def pick(hero, action, picks):
-    import heroine_process as hp
+    import cutout as hp
     d = os.path.join(WORK, "poses", hero, action)
     for spec in picks:
         pose, sd = spec.split("=")
@@ -231,7 +231,7 @@ def pick(hero, action, picks):
             box, info = live_layers.face_of(plate)
             face_pos = j3.prompt_for(hero, "-", "portrait")
             os.environ["ART_LORA"] = "%s:1.0" % LORA[hero]
-            os.environ["ART_LORA_TRIGGER"] = "%s_tdc" % hero
+            os.environ["ART_LORA_TRIGGER"] = TRIGGER[hero]
             bl = j3.expression(plate, box, info, face_pos, "blink", int(sd) + 7).convert("RGBA")
             bl.putalpha(alpha if isinstance(alpha, Image.Image) else Image.fromarray(alpha))
             bl.save(os.path.join(out, "full_blink.png"))

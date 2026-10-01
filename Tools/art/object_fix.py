@@ -861,7 +861,7 @@ def main():
     os.environ.setdefault("ART_CKPT", "waiIllustriousSDXL_v170.safetensors")
     if a.hero in K.LORA:
         os.environ["ART_LORA"] = "%s:0.8" % K.LORA[a.hero]
-        os.environ["ART_LORA_TRIGGER"] = "%s_tdc" % a.hero
+        os.environ["ART_LORA_TRIGGER"] = K.TRIGGER[a.hero]
     import heroine_j3 as j3
     desc = DESC.get(kind_of(a.part), kind_of(a.part).replace("_", " "))
     if kind_of(a.part) in ("objects", "objects-back"):

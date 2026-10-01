@@ -1,7 +1,7 @@
 """Live 2D 工作室: one local web page for the animated portraits' fixed flow 甲 (Docs/Design/22b, code flow
 Docs/Code/08_Studio.md).
 
-    myenv/Scripts/python.exe Tools/live2d_studio/app.py      (or Tools/live2d_studio/start.bat) -> http://127.0.0.1:7861
+    python Tools/live2d_studio/app.py      (or Tools/live2d_studio/start.bat; LIVE2D_PYTHON picks another Python) -> http://127.0.0.1:7861
 
 Tabs: 總覽 (every hero's folders and how far each got), 資料夾 (one plate through 甲: split, cut the pieces, six packs
 with the part and assembly checks, mouth shapes, rig, check against the plate, the character's standard motions,
@@ -32,21 +32,20 @@ WORK = _C.WORK
 LIVE = os.path.join(WORK, "live")
 CHECK = os.path.join(LIVE, "check")
 PREVIEW = os.path.join(LIVE, "preview")
-ASSETS = os.path.join(ROOT, "Assets")
+PLATES = _C.PLATES
 SERVER = _C.COMFY_URL
 GODOT = _C.GODOT
 DECISIONS = os.path.join(WORK, "review_decisions.json")   # shared with the art studio; Claude reads it and acts on it
 
-HERO_NAMES = {"alicia": "艾莉西亞", "freya": "芙蕾雅", "yukino": "雪乃", "rena": "蕾娜"}
+HERO_NAMES = {h: c.get("name", h) for h, c in _C.CHARACTERS.items()}   # characters/<id>.toml
 POSE_NAMES = {"idle": "待機", "raise": "舉起", "draw": "拉弓", "release": "放箭", "cast": "施法", "recover": "收勢",
               "open": "展扇", "sweep": "橫掃", "point": "指向", "windup": "蓄力", "slam": "砸地", "impact": "扛肩",
               "apose": "A 字站姿", "ready": "預備"}
-SKIN_NAMES = {"A": "休假日", "B": "星夜祭典", "C": "職業交換", "D": "夏日海灘", "E": "月下晚宴", "F": "裂隙侵蝕",
-              "G": "深夜私語", "H": "賽車女郎", "I": "新年和服", "J": "婚禮"}
+SKIN_NAMES = dict(_C.STUDIO.get("outfit_names", {}))   # live2d.toml [studio]
 # each hero's skill: the key_poses.py action, the skill_preview.gd style and its poses in order
 # the one plate the fixed flow 甲 is run on now (the owner: one character's one plate at a time); the folder tab is
-# locked to it. Set to None to choose freely again.
-FOCUS = ("freya", "pose_apose")
+# locked to it. live2d.toml [studio] focus = "<hero>/<series>"; "" to choose freely again.
+FOCUS = tuple(_C.STUDIO["focus"].split("/", 1)) if "/" in _C.STUDIO.get("focus", "") else None
 
 SKILLS = {"alicia": ("bow", "bow", ["raise", "draw", "release"], "弓：舉弓 → 拉滿 → 放箭"),
           "freya": ("staff", "fire", ["raise", "cast", "recover"], "爆炎球：舉杖聚火 → 出招 → 收勢"),
@@ -113,7 +112,7 @@ def plate_of(hero, series):
     d = fdir(hero, series)
     if os.path.exists(os.path.join(d, "full.png")):
         return os.path.join(d, "full.png")
-    a = os.path.join(ASSETS, "Heroines", hero) if series == "-" else os.path.join(ASSETS, "Heroines", hero, "skins", series)
+    a = _C.plate_dir(hero, series)   # live2d.toml [paths] plates
     return os.path.join(a, "full.png") if os.path.exists(os.path.join(a, "full.png")) else None
 
 
@@ -528,11 +527,12 @@ def build():
             ov_check.click(check_all, None, ov_log).then(overview_rows, None, ov_table)
         with gr.Tab("資料夾"):
             with gr.Row():
-                fh, fs = FOCUS or ("alicia", (folders("alicia") or [None])[0])
+                first = next(iter(HERO_NAMES), None)
+                fh, fs = FOCUS or (first, (folders(first) or [None])[0] if first else None)
                 f_hero = gr.Radio(heroes, value=fh, label="英雄", interactive=FOCUS is None)
                 f_series = gr.Dropdown(folder_choices(fh), value=fs, label="資料夾", interactive=FOCUS is None)
             if FOCUS:
-                gr.Markdown("**目前專注的立繪：%s・%s**（一次只跑一張；要換在 `app.py` 的 `FOCUS` 改）" % (HERO_NAMES[FOCUS[0]], folder_label(FOCUS[1])))
+                gr.Markdown("**目前專注的立繪：%s・%s**（一次只跑一張；要換在 `live2d.toml` 的 `[studio] focus` 改）" % (HERO_NAMES[FOCUS[0]], folder_label(FOCUS[1])))
             with gr.Row():
                 with gr.Column(scale=3):
                     f_gal = gr.Gallery(columns=4, height=640, object_fit="contain", label="這個資料夾")
@@ -621,4 +621,4 @@ def build():
 
 if __name__ == "__main__":
     build().queue().launch(server_name="127.0.0.1", server_port=7861, inbrowser="--no-browser" not in sys.argv,
-                           allowed_paths=[WORK, ASSETS])
+                           allowed_paths=[WORK, PLATES])

@@ -73,7 +73,9 @@ def pipeline(lora=None, lora_scale=float(os.environ.get("MV_LORA_SCALE", "0.3"))
     pipe.to(device="cuda", dtype=torch.float16)
     pipe.cond_encoder.to(device="cuda", dtype=torch.float16)
     if lora:
-        pipe.load_lora_weights(os.path.join(MODELS, "Lora"), weight_name="%s_waiIllustriousSDXL_v170.safetensors" % lora)
+        # the character's LoRA file (characters/<id>.toml "lora"), or a file name given as it is
+        name = _C.CHARACTERS[lora]["lora"] if lora in _C.CHARACTERS else lora
+        pipe.load_lora_weights(os.path.join(MODELS, "Lora"), weight_name=name)
         pipe.fuse_lora(lora_scale=lora_scale)
     pipe.enable_vae_slicing()
     pipe.enable_vae_tiling()
@@ -118,7 +120,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("plate")
     ap.add_argument("out")
-    ap.add_argument("--lora", default=None)
+    ap.add_argument("--lora", default=None, help="a character id (characters/<id>.toml) or a LoRA file name")
     ap.add_argument("--prompt", default="high quality, anime, full body, standing")
     ap.add_argument("--seed", type=int, default=7)
     a = ap.parse_args()

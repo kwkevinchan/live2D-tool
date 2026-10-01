@@ -246,7 +246,7 @@ def write_inx(path, payload, images):
 
 def rig(hero, series, out=None):
     ld = os.path.join(WORK, "live", hero, series)
-    # a key-pose folder (pose_draw …) brings its own plate; installed outfits read theirs from Assets
+    # a key-pose folder (pose_draw …) brings its own plate; outfits read theirs from the plates folder (live2d.toml)
     sd = ld if os.path.exists(os.path.join(ld, "full.png")) else src_dir(hero, series)
     full = Image.open(os.path.join(sd, "full.png")).convert("RGBA")
     bp = os.path.join(sd, "full_blink.png")   # a side face may have none (eyes_closed.png or no closed eyes then)
@@ -845,12 +845,14 @@ def rig_st(hero, series, out=None):
     # feel the motion; each drives a "<part>:: Physics" parameter that bends the part, more the further from where
     # it hangs
     swings = []   # (part, physics uuid, per-vertex weights 0..1, sway px at full swing)
+    swing_names = {}   # physics uuid -> its label: "<label>:: Physics" (the skirt's halves need names of their own)
 
     def pendulum(label, kind, pos):
         ln, fq, dmp, _ = SWING[kind]
         n = node("%s Physics" % label, x=pos[0], y=pos[1], kind="SimplePhysics")
         n.update({"param": uid(), "model_type": "SpringPendulum", "map_mode": "AngleLength", "gravity": 1.0, "length": ln,
                   "frequency": fq, "angle_damping": dmp, "length_damping": 0.6, "output_scale": [1.0, 1.0]})
+        swing_names[n["param"]] = label
         return n
 
     def below(pt, y0):   # 0 above y0, growing to 1 at the part's bottom
@@ -1035,7 +1037,7 @@ def rig_st(hero, series, out=None):
         if pid in by_pid:
             by_pid[pid]["bindings"].append(deform_binding(pt, sway))
             continue
-        prm = param("%s:: Physics" % pt.name, [0.0, 0.5, 1.0], -1.0, 1.0, [deform_binding(pt, sway)])
+        prm = param("%s:: Physics" % swing_names.get(pid, pt.name), [0.0, 0.5, 1.0], -1.0, 1.0, [deform_binding(pt, sway)])
         prm["uuid"] = pid
         by_pid[pid] = prm
         params.append(prm)

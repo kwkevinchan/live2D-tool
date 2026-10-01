@@ -6,15 +6,15 @@ For every heroine and outfit (default + skin series A-J):
   expr    : blink / happy / hurt / cast / shy, each an inpaint of the face crop only, composited back with a
             feathered mask, so everything outside the face is pixel-identical to the plate
   scene   : a landscape wardrobe illustration (background + sitting/lying pose), same identity and outfit
-Then Tools/art/grok/heroine_process.py turns plate + expressions into full/bust/chibi/meta.
+Turning a plate into the game's assets (cut out, bust, chibi) and installing it is the art studio's job (towerD),
+not this toolkit's: the pipeline starts from an installed plate (live2d.toml [paths] plates).
 
 Content rule: heroines are adults (20s) and nothing explicit (no nudity). Needs the local ComfyUI server.
 
     python Tools/art/heroine_j3.py gen   <work_dir> <hero> [series ...]   ("-" = default outfit)
     python Tools/art/heroine_j3.py scene <work_dir> <hero> [series ...]
-    python Tools/art/heroine_j3.py install <work_dir> <hero> [series ...]
 """
-import io, json, os, shutil, subprocess, sys, time, uuid
+import io, json, os, sys, time, uuid
 
 import numpy as np
 from PIL import Image, ImageFilter
@@ -23,7 +23,6 @@ sys.path.insert(0, os.path.dirname(__file__))
 import comfy_gen as cg  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-PROCESS = os.path.join(ROOT, "Tools", "art", "grok", "heroine_process.py")
 
 QUALITY = "score_9, score_8_up, score_7_up"
 STYLE = ("source_anime, japanese light novel illustration, soft pastel colors, delicate lineart, airy lighting, "
@@ -242,29 +241,11 @@ def scene(work, hero, series, seed=202):
     print(hero, series, "scene ->", d)
 
 
-def install(work, hero, series):
-    d = os.path.join(work, hero, series)
-    out = os.path.join(d, "out")
-    args = [sys.executable, PROCESS, "process", os.path.join(d, "plate.png"), out, "--id", hero]
-    for name in EXPRESSIONS:
-        args += ["--variant", "%s=%s" % (name, os.path.join(d, "expr_%s.png" % name))]
-    subprocess.run(args, check=True)
-    dest = _C.plate_dir(hero, series)   # live2d.toml [paths] plates
-    os.makedirs(dest, exist_ok=True)
-    for f in os.listdir(out):
-        if f.endswith(".png") and not f.startswith("_") or f == "meta.json":
-            shutil.copy(os.path.join(out, f), os.path.join(dest, f))
-    sc = os.path.join(d, "scene.png")
-    if os.path.exists(sc):
-        Image.open(sc).convert("RGB").save(os.path.join(dest, "scene.jpg"), quality=88)
-    print("installed", hero, series, "->", dest)
-
-
 def main():
     cmd, work, hero = sys.argv[1], sys.argv[2], sys.argv[3]
     series_list = sys.argv[4:] or list(OUTFITS[hero])
     for s in series_list:
-        {"plates": plates, "gen": gen, "scene": scene, "install": install}[cmd](work, hero, s)
+        {"plates": plates, "gen": gen, "scene": scene}[cmd](work, hero, s)
 
 
 if __name__ == "__main__":

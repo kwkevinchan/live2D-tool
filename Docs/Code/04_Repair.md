@@ -249,7 +249,7 @@ main()
 ## 5. 多角度參考圖（`Tools/art/multiview.py`）
 
 ```
-<mvadapter python> Tools/art/multiview.py <立繪.png> <輸出資料夾> --lora <角色> [--prompt "..."] [--seed 7]
+<mvadapter python> Tools/art/multiview.py <立繪.png> <輸出資料夾> --lora <角色或微調檔名> [--prompt "..."] [--seed 7]
 ```
 
 用 MV-Adapter 從一張立繪生成正面、右側、背面、左側四個角度（768×768），用我們自己的繪圖模型加角色專屬微調，所以長相保持一致。在 MV-Adapter 自己的 Python 環境執行（它的 torch 借 ComfyUI 的），不經過 ComfyUI，但會吃滿顯示卡。
@@ -265,7 +265,7 @@ __main__ → run(plate, out, lora, prompt, seed)
 ```
 
 - **`square(plate)`**：人物裁出來，放大到正方形的 90%，置中在灰底上（MV-Adapter 的前處理）。`object_fix --from-view` 照同樣的算法放回立繪。
-- **`pipeline(lora)`**：載入繪圖模型、MV-Adapter、角色微調（強度預設 0.3，環境變數 `MV_LORA_SCALE`；太高每個角度都畫成正面）。整個放上顯示卡（分批載入會壞），一次四個角度（六個會超過 16 GB）。
+- **`pipeline(lora)`**：載入繪圖模型、MV-Adapter、角色微調（`--lora` 給角色代號時讀角色檔的 `lora`，否則當成檔名）（強度預設 0.3，環境變數 `MV_LORA_SCALE`；太高每個角度都畫成正面）。整個放上顯示卡（分批載入會壞），一次四個角度（六個會超過 16 GB）。
 - **`camera_c2w`**：水平一圈的相機矩陣（取代 MV-Adapter 需要 3D 套件的那支函式）。
 - 產出：`reference.png`、`view_000.png`／`view_090.png`／`view_180.png`／`view_270.png`、`views.jpg`。
 

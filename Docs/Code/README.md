@@ -62,7 +62,7 @@ Godot：InochiPuppet 讀 .inx → LivePortrait 在遊戲裡播放
 
 ## 2. 怎麼執行
 
-- **Python 工具**：在專案根目錄執行 `python Tools/art/<工具>.py ...`。每支工具都會把自己的資料夾加進搜尋路徑，彼此直接 `import`（例如 `import live_layers as L`）。需要 numpy、scipy、Pillow、opencv；工作室另外要 gradio。專案裡還沒有自己的 Python 環境，目前借 towerD 的 `myenv`。Windows 主控台是 cp950，輸出有中文時加 `PYTHONIOENCODING=utf-8`。
+- **Python 工具**：在專案根目錄執行 `python Tools/art/<工具>.py ...`。每支工具都會把自己的資料夾加進搜尋路徑，彼此直接 `import`（例如 `import live_layers as L`）。需要 numpy、scipy、Pillow、opencv；工作室另外要 gradio。這台電腦 PATH 上的 `python` 已經有這些套件（towerD 的 `myenv` 也可以）。Windows 主控台是 cp950，輸出有中文時加 `PYTHONIOENCODING=utf-8`。
 - **多角度參考圖**：`multiview.py` 要用 MV-Adapter 自己的 Python（`live2d.toml` 的 `[mvadapter] python`）。
 - **Godot 場景**：`<Godot> --path . res://Tests/live/<場景>.tscn -- <參數>`。除了 `puppet_test` 之外都要開視窗（無視窗模式畫不出東西），開視窗時加 `--audio-driver Dummy`。Godot 路徑在 `live2d.toml` 的 `[paths] godot`。
 - **ComfyUI**：預設 `http://127.0.0.1:8188`。要用到它的工具在下面各文件會註明。
@@ -76,21 +76,22 @@ Godot：InochiPuppet 讀 .inx → LivePortrait 在遊戲裡播放
 - **候選與套用**：會用 AI 的工具不直接改圖層，先產生候選（`st/fix/<名稱>_<種子>.png`、`st/gen/<名稱>_e<種子>.png`）和一張對照圖，看過再用 `object_fix.py --apply <種子>` 或 `object_place.py` 換上去。
 - **結束代碼**：檢查類工具（`rig_check`、`rig_stress`、`object_check`、`outline --check`）有問題時回傳 1，可以拿來判斷是否通過。
 
-## 4. 搬家後的已知問題
+## 4. 搬家後的問題
 
-從 towerD 搬過來後，下面這些地方還沒處理，執行到會出錯或結果不對（2026-10-01 讀程式時找到的）：
+2026-10-01 讀程式時找到、已經在 `fix-after-move` 分支修好的：
 
-| 位置 | 問題 |
+| 原本的問題 | 怎麼修 |
 |---|---|
-| `key_poses.py pick`、`live_layers.py scene` | 匯入 `Tools/art/grok/heroine_process`（去背），這個資料夾沒搬過來，會出錯 |
-| `heroine_j3.py install` | 呼叫 `Tools/art/grok/heroine_process.py`，同上；而且畫立繪本來就是美術工具箱的事，不是這條流程 |
-| 工作室 `plate_of` | 主設計和服裝的原圖從 `<專案>/Assets/Heroines` 找，沒有改用設定檔的 `plates`，所以找不到原圖 |
-| 工作室「審圖」按鈕 | 呼叫 `review_plate.py`，這支沒搬過來 |
-| 工作室 `start.bat` | 用 `<專案>/myenv/Scripts/python.exe`，這個專案沒有 |
-| 工作室 | 角色中文名、服裝名寫死在程式裡，沒有讀 `characters/*.toml`；`FOCUS` 鎖在芙蕾雅 `pose_apose` |
-| `object_fix.py`、`key_poses.py` | 觸發詞寫死成 `<角色>_tdc`，沒有讀角色檔的 `trigger`（目前內容剛好一樣） |
-| `multiview.py` | 角色微調的檔名寫死成 `<角色>_waiIllustriousSDXL_v170.safetensors`，沒有讀角色檔的 `lora` |
-| 舊程式說明提到的 `Tools/run_tests.sh` | 沒搬過來；播放器測試改成直接用 Godot 執行（見 [06_Verify.md](06_Verify.md)） |
+| `key_poses.py pick`、`live_layers.py scene` 匯入沒搬過來的 `heroine_process` | 去背的部分搬成 `Tools/art/cutout.py` |
+| `heroine_j3.py install` 呼叫沒搬過來的程式 | 拿掉（把立繪裝進立繪資料夾是美術工具箱的事） |
+| 工作室從 `<專案>/Assets` 找原圖 | 改用設定檔的 `plates` |
+| 工作室「審圖」要的 `review_plate.py` 沒搬過來 | 從 towerD 搬過來 |
+| 工作室 `start.bat` 指向不存在的 Python | 改用 PATH 上的 `python`（`LIVE2D_PYTHON` 可改） |
+| 工作室的角色名、服裝名、`FOCUS` 寫死 | 角色名讀角色檔；服裝名和 `FOCUS` 改在 `live2d.toml` 的 `[studio]` |
+| 觸發詞寫死成 `<角色>_tdc` | 讀角色檔的 `trigger`（`key_poses.TRIGGER`） |
+| `multiview.py` 角色微調檔名寫死 | `--lora <角色>` 讀角色檔的 `lora` |
+| 裙子左右兩半的物理參數同名 | 改成 `Bottomwear Left / Right:: Physics` |
+| 沒有 `Tools/run_tests.sh` | 新增：Python 編譯和匯入、Godot 播放器測試 |
 
 **往「像原圖」拉的程式**：`Docs/Design/Project_Split.md` 第 3 節已經列出放置工具的 `--merge`、綁定時把圖層裁到人物輪廓（`part_img`、`real`、`as_plate`），以及分包工具印出跟原圖的差異。這次讀程式時，另外看到兩處會把立繪顏色蓋回圖層，要不要改請使用者決定：
 

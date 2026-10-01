@@ -240,7 +240,7 @@ Root
 | `Body:: Lean` | -1～1 | 腰以上轉 ±0.6 弧度 |
 | `Back Hair:: Physics`、`Front Hair:: Physics`、`<部件>:: Physics` | -1～1 | 由物理驅動，部件的網格往左右彎 |
 
-小地方：裙子左右兩半各有一個擺，兩個參數的名字都是 `Bottomwear:: Physics`。播放器用編號找物理參數，所以能動；但用名字設定時只找得到其中一個。
+參數名字取自擺的名字（`swing_names`）：裙子左右兩半是 `Bottomwear Left:: Physics`、`Bottomwear Right:: Physics`（2026-10-01 之前兩個同名）。
 
 ---
 

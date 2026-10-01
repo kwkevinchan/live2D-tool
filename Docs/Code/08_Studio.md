@@ -4,7 +4,7 @@
 python Tools/live2d_studio/app.py [--no-browser]      → http://127.0.0.1:7861
 ```
 
-（`start.bat` 用的 Python 路徑在這個專案不存在，見總覽「已知問題」。）
+或 `Tools/live2d_studio/start.bat`：用 PATH 上的 `python`，環境變數 `LIVE2D_PYTHON` 可以指定另一個。
 
 一個本機網頁（Gradio），把流程甲排成按鈕。每個按鈕在背景執行對應的指令工具，進度即時顯示在「進度」框裡；執行完自動重新整理圖片。工作資料夾、ComfyUI、Godot 的位置都讀設定檔。
 
@@ -15,7 +15,7 @@ python Tools/live2d_studio/app.py [--no-browser]      → http://127.0.0.1:7861
 ```
 __main__
 └─ build()                                   組出整個頁面，接上每個按鈕
-   └─ launch(127.0.0.1:7861, allowed_paths=[WORK, ASSETS])
+   └─ launch(127.0.0.1:7861, allowed_paths=[WORK, PLATES])
 
 按下一個步驟按鈕，例如「4. 綁定」
 └─ do_rig(hero, series)
@@ -45,7 +45,7 @@ __main__
 
 ### 2-2. 資料夾
 
-`FOCUS = ("freya", "pose_apose")` 時鎖定這一張立繪（一次只做一張）；改成 `None` 才能自由選。
+`live2d.toml` 的 `[studio] focus = "freya/pose_apose"` 時鎖定這一張立繪（一次只做一張，程式裡是 `FOCUS`）；改成空字串才能自由選。
 
 | 按鈕 | 函式 | 執行 |
 |---|---|---|
@@ -71,7 +71,7 @@ __main__
 
 `fix_view` 顯示輪廓對照圖和補畫對照圖。
 
-**其他工具**（收合區）：審圖（`review_plate.py`，沒搬過來）、情境圖（`live_layers.py scene`）、粗分層（`live_layers.py parts`）、預覽動圖（`live_layers.py preview`）。
+**其他工具**（收合區）：審圖（`review_plate.py`，見 [06_Verify.md](06_Verify.md)）、情境圖（`live_layers.py scene`）、粗分層（`live_layers.py parts`）、預覽動圖（`live_layers.py preview`）。
 
 ### 2-3. 狀態
 
@@ -84,7 +84,7 @@ __main__
 |---|---|
 | `run(args, needs_comfy, exe, env_extra)` | 執行一支工具（或 `exe=GODOT` 時執行 Godot），回傳越來越長的紀錄（只留最後 6000 字）；濾掉 Godot 無害的雜訊；最後加「完成。」或「失敗（代碼 N）。」 |
 | `folders(hero)`、`folder_label(series)` | 角色的資料夾（服裝在前、姿勢在後）和中文名稱 |
-| `plate_of(hero, series)` | 原圖：資料夾自己的 `full.png`，或 `<專案>/Assets/Heroines/...`（還沒改用設定檔） |
+| `plate_of(hero, series)` | 原圖：資料夾自己的 `full.png`，或設定檔 `plate_dir` 的 |
 | `model_of(hero, series)` | 資料夾裡最新的 `.inx` |
 | `check_results()` | 讀 `<work>/live/check/rig_check.json` |
 | `review_of(hero, series)` | 讀資料夾的 `review.json` 的自動警告 |
@@ -92,4 +92,4 @@ __main__
 | `character_passed`、`ready_to_join` | 人物標準動作有沒有缺東西、武器與物件有沒有通過 |
 | `checkpoints()` | 模型資料夾裡的繪圖模型清單（嘴型選單用） |
 
-角色和服裝的中文名寫在 `HERO_NAMES`、`SKIN_NAMES`、`POSE_NAMES`；`SKILLS` 記每個角色的技能（關鍵姿勢的動作、技能預覽的種類、姿勢順序），目前頁面上沒有用到。
+角色中文名 `HERO_NAMES` 讀角色檔的 `name`，服裝名 `SKIN_NAMES` 讀 `live2d.toml` 的 `[studio] outfit_names`，姿勢名 `POSE_NAMES` 寫在程式裡；`SKILLS` 記每個角色的技能（關鍵姿勢的動作、技能預覽的種類、姿勢順序），目前頁面上沒有用到。

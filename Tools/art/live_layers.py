@@ -29,7 +29,6 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 
 sys.path.insert(0, os.path.dirname(__file__))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "grok"))
 import comfy_gen as cg      # noqa: E402
 import heroine_j3 as j3     # noqa: E402
 import workflows as W       # noqa: E402
@@ -370,7 +369,7 @@ def mouths(hero, series, seed=301):
 # ------------------------------------------------------------------ the scene: character, clean background, depth layers
 def scene(hero, series, n=4):
     import cv2
-    import heroine_process as hp
+    import cutout as hp
     img = Image.open(os.path.join(src_dir(hero, series), "scene.jpg")).convert("RGB")
     d = out_dir(hero, series)
     _, alpha, rgba = hp.cutout(img)   # the character (and what she holds) as one piece

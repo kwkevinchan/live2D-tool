@@ -11,7 +11,7 @@
 ```
 python Tools/art/live_layers.py parts   <角色> <服裝>       找骨架＋粗分層
 python Tools/art/live_layers.py mouths  <角色> <服裝>       嘴型差分
-python Tools/art/live_layers.py scene   <角色> <服裝> [n]   情境圖去背、補背景、分 n 層深度（目前會失敗，見總覽）
+python Tools/art/live_layers.py scene   <角色> <服裝> [n]   情境圖去背、補背景、分 n 層深度
 python Tools/art/live_layers.py preview <角色> <服裝>       粗分層和情境圖的預覽動圖
 ```
 
@@ -50,7 +50,7 @@ mouths(hero, series)
 └─ heroine_j3.img2img(..., mask) × 4               閉、啊、咿、喔 → mouth_*.png、mouth.json
 
 scene(hero, series, n)
-├─ heroine_process.cutout                         （沒搬過來）
+├─ cutout.cutout                                 去背
 ├─ inpaint(...)                                   補背景
 ├─ workflows "depth" → heroine_j3.run_wf          深度圖 → 切 n 層
 └─ split_figure(..., "sc")
@@ -116,7 +116,7 @@ preview(hero, series)
 
 ### 1-4. `scene`、`preview`
 
-- **`scene`**：情境圖去背（需要 `heroine_process`，目前沒有）、把人物後面的背景補畫出來、算深度、依深度切成 n 層（近的先切，遠的層在被擋住的地方用 OpenCV 補色）、人物再做一次粗分層（`sc_*`）。
+- **`scene`**：情境圖去背（`cutout.py`）、把人物後面的背景補畫出來、算深度、依深度切成 n 層（近的先切，遠的層在被擋住的地方用 OpenCV 補色）、人物再做一次粗分層（`sc_*`）。
 - **`preview`**：不經過 Godot，用 Python 直接把粗分層的部位繞關節轉，做成 `preview_figure.gif`（60 格，含眨眼、嘴型、呼吸）；有情境圖時另做 `preview_scene.gif`（每層視差不同，加落葉）。
 
 ---

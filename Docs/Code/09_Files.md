@@ -88,6 +88,7 @@
 | `st/st_layers.json` | `see_through.py` | 拆層模型的原始資訊：每層 `filename`、`name`、`left`、`top`、`depth_median`；`input`（`crop` 裁切範圍、`resolution`） |
 | `mouth.json` | `live_layers.py mouths` | `face`（中心、臉高）、`mouth_box`（x0, y0, x1, y1） |
 | `eyes.json` | `live_layers.py parts` | `eye_box` |
+| `review.json` | `review_plate.py` | `counts`、`warnings` |
 | `pose.json` | `key_poses.py pick` | `hero`、`action`、`pose`、`seed`：這張是用哪個骨架畫的 |
 | `st/groups/groups.json` | `split_groups.py` | 見 [03_Packs.md](03_Packs.md) |
 | `st/groups/objects/objects.json` | `object_check.py` | `passed`，每件的 `pieces`、`floating`、`holes`、`pivot`、`warnings` |

@@ -32,6 +32,7 @@ COMFY_OUT = os.path.normpath(_comfy.get("output", ""))   # where ComfyUI saves i
 CKPT = os.environ.get("ART_CKPT") or _cfg.get("models", {}).get("checkpoint", "waiIllustriousSDXL_v170.safetensors")
 MODELS = os.path.normpath(_cfg.get("models", {}).get("dir", ""))   # the model folder (MV-Adapter reads files there)
 MV = {k: os.path.normpath(v) for k, v in _cfg.get("mvadapter", {}).items()}   # python, repo, configs
+STUDIO = _cfg.get("studio", {})   # the Live 2D studio: focus ("<hero>/<series>"), outfit_names
 
 CHARACTERS = {}
 for f in sorted(glob.glob(os.path.join(ROOT, "characters", "*.toml"))):

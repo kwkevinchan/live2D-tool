@@ -13,7 +13,8 @@
 | 整合 | `motion_test.tscn` | 8 |
 | 關節壓力測試 | `rig_stress.py` | （分段手腳時） |
 | 技能預覽 | `skill_preview.tscn` | 甲之後 |
-| 播放器規則 | `puppet_test.tscn` | 改播放器時 |
+| 程式能跑、播放器規則 | `Tools/run_tests.sh`（含 `puppet_test.tscn`） | 每次提交前 |
+| 自動審圖 | `review_plate.py` | 關鍵姿勢拆完 |
 
 Godot 場景除了 `puppet_test` 都要開視窗，加 `--audio-driver Dummy` 免得出聲。下面的 `<Godot>` 是設定檔 `[paths] godot` 那支。
 
@@ -241,6 +242,7 @@ _ready()
 
 ```
 <Godot> --headless --path . res://Tests/live/puppet_test.tscn
+Tools/run_tests.sh                 所有 Python 程式能編譯、能匯入，再跑這個測試
 ```
 
 不需要視窗，也不讀檔案：在程式裡組小模型，檢查播放器的規則，印出「N checks, M failures」，有失敗時結束代碼 1。
@@ -259,3 +261,25 @@ _ready()
 - **`_physics`**：靜止時穩定、模型移動時頭髮擺動、之後再停下來。
 - **`_portrait`**：說話時嘴巴會動、計時姿勢到時間回待機並發出通知、淡入淡出中快速切回來時目前的姿勢仍然顯示。
 - **`_self_update`**：由 `LivePortrait` 驅動的模型不會自己再更新一次（否則物理一格跑兩次）。
+
+## 9. 自動審圖（`Tools/art/review_plate.py`）
+
+```
+python Tools/art/review_plate.py <角色> [姿勢 ...]        關鍵姿勢資料夾 → review.jpg、review.json
+python Tools/art/review_plate.py cand <角色> <動作>       關鍵姿勢的候選 → <work>/poses/<角色>/<動作>/review_<姿勢>.jpg
+```
+
+拆層之前抓畫錯的地方（多一條腿、多一把武器、武器浮在空中）。從 towerD 原樣搬來。
+
+```
+review_folder(hero, pose)
+├─ 讀 full.png、pose.json → key_poses.POSES      畫圖時的骨架
+├─ skeleton_overlay(plate, pts)                   立繪疊骨架
+├─ group_map(d, size)                             拆層依群組上色，數武器塊數、鞋子、手臂、臉、前髮、腳底、雜物比例
+│  └─ pieces(mask, min_share)
+└─ sheet(title, panels, lines, warn, out)         三格：立繪 ｜ 疊骨架 ｜ 群組上色
+
+review_candidates(hero, action)                   每張候選疊上骨架
+```
+
+其中「圖層疊回去跟原圖不同」這一項也是拿原圖當標準，只當參考。

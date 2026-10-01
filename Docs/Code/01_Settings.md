@@ -29,6 +29,7 @@ C.character("freya")                 # 同上，沒有這個角色時丟出 KeyE
 | `[models] checkpoint` | `CKPT` | `ART_CKPT` | `waiIllustriousSDXL_v170.safetensors` |
 | `[models] dir` | `MODELS` | | 空（多角度參考圖直接讀模型檔） |
 | `[mvadapter] python / repo / configs` | `MV` | | |
+| `[studio] focus`、`outfit_names` | `STUDIO` | | 工作室鎖定的立繪（`"<角色>/<服裝>"`，空字串＝不鎖）、服裝代號的中文名 |
 
 - `LIVE2D_CONFIG` 可以指定另一個設定檔。
 - 路徑會展開 `~` 和環境變數，再正規化。
@@ -39,12 +40,12 @@ C.character("freya")                 # 同上，沒有這個角色時丟出 KeyE
 
 | 鍵 | 用途 | 誰在用 |
 |---|---|---|
-| `id`、`name` | 英文代號、中文名 | （工作室目前沒讀，見總覽「已知問題」） |
+| `id`、`name` | 英文代號、中文名 | 工作室 |
 | `age` | 年齡，寫進提示詞的「N years old」；一律成年 | `heroine_j3.prompt_for` |
 | `look` | 外觀描述 | 提示詞 |
 | `weapon` | 立繪上武器的畫法 | `heroine_j3.plate_prompt` |
 | `hold` | 武器的白話描述 | `key_poses`、`rig_parts.paint_weapon`、`object_fix`（重畫武器時） |
-| `lora`、`trigger` | 角色專屬微調的檔名、觸發詞 | `key_poses.LORA`、`object_fix` |
+| `lora`、`trigger` | 角色專屬微調的檔名、觸發詞 | `key_poses.LORA`、`key_poses.TRIGGER`、`object_fix`、`multiview --lora` |
 | `neg` | 這個角色額外的排除詞 | `heroine_j3.hero_neg` |
 | `[outfits."<服裝>"] outfit / scene / scene_pose` | 每套服裝的描述、情境圖的背景和姿勢 | `heroine_j3.OUTFITS` |
 
@@ -123,7 +124,7 @@ C.character("freya")                 # 同上，沒有這個角色時丟出 KeyE
 | `_ellipse_mask(...)` | 羽化的橢圓遮罩 | 嘴型 |
 | `expression(...)` | 只重畫臉部，做表情差分（閉眼等） | `key_poses.pick` |
 
-其餘的 `plates`、`gen`、`scene`、`install` 指令是畫立繪用的，`install` 在這個專案會失敗（見總覽「已知問題」）。
+其餘的 `plates`、`gen`、`scene` 指令是畫立繪用的。把立繪處理成遊戲素材、裝進立繪資料夾是美術工具箱（towerD）的事，原本的 `install` 指令已經拿掉。
 
 ---
 
@@ -136,7 +137,7 @@ python Tools/art/key_poses.py cand <角色> <動作>                    每個�
 python Tools/art/key_poses.py pick <角色> <動作> <姿勢>=<種子> ...   挑中的去背＋閉眼 → <work>/live/<角色>/pose_<姿勢>/
 ```
 
-（`pick` 目前會失敗，見總覽「已知問題」。）
+`pick` 去背用 `cutout.py`（見下面第 6 節）。
 
 其他工具從這支借用的資料：
 
@@ -144,9 +145,26 @@ python Tools/art/key_poses.py pick <角色> <動作> <姿勢>=<種子> ...   挑
 |---|---|---|
 | `LORA` | 角色 → 微調檔名（來自角色檔 `lora`） | `object_fix`（`rig_parts` 補畫身體時沒有加微調） |
 | `HOLD` | 角色 → 武器的白話描述（來自角色檔 `hold`） | `rig_parts.paint_weapon`、`object_fix` |
+| `TRIGGER` | 角色 → 角色微調的觸發詞（來自角色檔 `trigger`） | `object_fix` |
 | `POSES[動作][姿勢]` | 十八個關節點（佔畫面的比例，COCO-18 順序：鼻、頸、右肩、右肘、右腕、左肩、左肘、左腕、右髖、右膝、右踝、左髖、左膝、左踝、右眼、左眼、右耳、左耳） | `see_through.fix_grip`、`rig_parts.split_legs`（關鍵姿勢資料夾用畫圖時的骨架補關節） |
 | `W_`、`H_` | 關鍵姿勢立繪的大小 832×1216 | 同上 |
 
 動作有 `bow`（弓）、`staff`（杖）、`fan`（扇）、`wrench`（扳手）、`stand`（待機）、`base`（A 字站姿，綁骨架用的底圖）。
 
 `clear_background` 會把立繪上大片的底色（跟四邊顏色接近、400 像素以上的連通區）也變透明，處理武器和身體之間圍住的背景。
+
+---
+
+## 6. 去背（`Tools/art/cutout.py`）
+
+從 towerD 的 `heroine_process.py` 只拿出去背的部分。`key_poses.py pick` 和 `live_layers.py scene` 用它。
+
+```
+cutout(rgb_img)                         → (rgb, alpha, rgba)
+├─ get_session()                        rembg 的 isnet-anime 模型（第一次會下載，約 170 MB）
+├─ rembg.remove(...)
+└─ clean_alpha(rgba, plate)             去掉邊緣的灰邊、背景色的大片、碎點
+   ├─ _bg_color、_saturation
+   ├─ _keep_body_components(a)          只留主體和附近的塊（杖頭寶珠、弓尖）
+   └─ _fill_pinholes(a, plate, bg)      補人物裡的小洞（背景色的洞保持透明）
+```

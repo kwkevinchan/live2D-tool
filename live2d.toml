@@ -26,3 +26,9 @@ dir = "C:/Users/kwkev/Tool/StabilityMatrix-win-x64/Data/Models"
 python = "C:/Users/kwkev/Tool/mvadapter-env/Scripts/python.exe"
 repo = "C:/Users/kwkev/Tool/MV-Adapter"
 configs = "C:/Users/kwkev/Tool/sdxl-config"
+
+[studio]
+# 工作室（Tools/live2d_studio）：一次只做一張立繪，「資料夾」分頁鎖在這張；改成 "" 就能自由選
+focus = "freya/pose_apose"
+# 服裝代號的中文名（每個角色共用同一套代號）
+outfit_names = { A = "休假日", B = "星夜祭典", C = "職業交換", D = "夏日海灘", E = "月下晚宴", F = "裂隙侵蝕", G = "深夜私語", H = "賽車女郎", I = "新年和服", J = "婚禮" }
