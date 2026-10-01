@@ -16,6 +16,7 @@
 │  │  ├─ mouth_*.png、mouth.json                  嘴型差分
 │  │  ├─ <角色>_<服裝>_st.inx、<角色>_<服裝>.inx   綁定結果（細部、粗）
 │  │  ├─ _shots/、_motions/、_motions_all/        動態截圖、標準動作
+│  │  ├─ llm_checks.md                            LLM 每個檢查點的結論（見 22b「LLM 檢查點」）
 │  │  └─ st/                                      細部分層
 │  │     ├─ st_<名稱>.png、st_<名稱>_depth.png、st_layers.json      拆層模型的原始輸出
 │  │     ├─ part_<名稱>.png、parts.json           目前的圖層和順序（每一步直接改這裡）

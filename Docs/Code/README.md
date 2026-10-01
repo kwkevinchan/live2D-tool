@@ -20,21 +20,24 @@
 
 固定流程甲（`Docs/Design/22b_Live2D_Flow.md`）的每一步：
 
-| 步驟 | 程式 | 要 ComfyUI | 產出（都在 `<work>/live/<角色>/<服裝>/`） |
-|---|---|---|---|
-| 0. 選立繪 | （設定檔 `live2d.toml` 的 `plates`） | | |
-| 找骨架 | `live_layers.py parts` | 要 | `fig_joints.json`、`fig_*.png`（粗分層）、`layer_*.png` |
-| 1. 拆圖層 | `see_through.py` | 要 | `st/part_*.png`、`st/parts.json`、`st/st_layers.json` |
-| 1b. 切零件 | `rig_parts.py` | 要（補畫身體底下、武器被擋住的部分） | 手臂、腿分段，武器補完整，`parts.json` 的 `pivots` |
-| 2. 分六包 | `split_groups.py` | | `st/groups/parts_<n>.jpg`、`assemble_<n>.jpg` |
-| 物件迴圈 | `outline.py` → `object_fix.py`（或 `object_edit.py` → `object_place.py`） | 上色時要 | `st/outline/`、`st/fix/`、`st/gen/` |
-| 3. 嘴型 | `live_layers.py mouths` | 要 | `mouth_*.png`、`mouth.json` |
-| 4. 綁定 | `inx_rig.py` | | `<角色>_<服裝>_st.inx` |
-| 5. 跟原圖比 | `rig_check.py`、Godot `puppet_preview.tscn` | | `live/check/`、`_shots/` |
-| 6. 人物標準動作 | Godot `motion_test.tscn ... bare` | | `_motions/` |
-| 7. 武器與物件 | `object_check.py` | | `st/groups/objects/` |
-| 8. 整合 | Godot `motion_test.tscn`（不加 `bare`） | | `_motions_all/` |
-| 關節壓力測試 | `rig_stress.py` | | `live/check/<名稱>_stress.jpg` |
+| 步驟 | 程式 | 要 ComfyUI | 產出（都在 `<work>/live/<角色>/<服裝>/`） | LLM 檢查 |
+|---|---|---|---|---|
+| 0. 選立繪 | （設定檔 `live2d.toml` 的 `plates`） | | | L0 |
+| 找骨架 | `live_layers.py parts` | 要 | `fig_joints.json`、`fig_*.png`（粗分層）、`layer_*.png` | L1 |
+| 1. 拆圖層 | `see_through.py` | 要 | `st/part_*.png`、`st/parts.json`、`st/st_layers.json` | L2 |
+| 1b. 切零件 | `rig_parts.py` | 要（補畫身體底下、武器被擋住的部分） | 手臂、腿分段，武器補完整，`parts.json` 的 `pivots` | L3 |
+| 2. 分六包 | `split_groups.py` | | `st/groups/parts_<n>.jpg`、`assemble_<n>.jpg` | L4（部件）、L6（組裝） |
+| 物件迴圈 | `outline.py` → `object_fix.py`（或 `object_edit.py` → `object_place.py`） | 上色時要 | `st/outline/`、`st/fix/`、`st/gen/` | L5a、L5b、L5c |
+| 3. 嘴型 | `live_layers.py mouths` | 要 | `mouth_*.png`、`mouth.json` | L7 |
+| 4. 綁定 | `inx_rig.py` | | `<角色>_<服裝>_st.inx` | |
+| 5. 跟原圖比 | `rig_check.py`、Godot `puppet_preview.tscn` | | `live/check/`、`_shots/` | L8 |
+| 6. 人物標準動作 | Godot `motion_test.tscn ... bare` | | `_motions/` | L9 |
+| 7. 武器與物件 | `object_check.py` | | `st/groups/objects/` | L10 |
+| 8. 整合 | Godot `motion_test.tscn`（不加 `bare`） | | `_motions_all/` | L11 |
+| 關節壓力測試 | `rig_stress.py` | | `live/check/<名稱>_stress.jpg` | L12 |
+| 交付 | | | `llm_checks.md` | L14 |
+
+每一步做完由 LLM 看檢查圖、寫下結論，通過才往下（檢查點的內容見 `Docs/Design/22b_Live2D_Flow.md`「LLM 檢查點」）。結論記在工作資料夾的 `llm_checks.md`。
 
 工作室網頁（[08_Studio.md](08_Studio.md)）把上面每一步排成按鈕，背後執行的就是這些指令。
 
