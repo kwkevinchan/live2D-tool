@@ -6,7 +6,7 @@
 
 ## 流程
 
-詳細規則見 `Docs/Design/22b_Live2D_Flow.md`（固定流程甲），AI 重畫的研究見 `Docs/Design/22c_Object_Generation.md`，程式說明見 `Docs/Code/Live2D.md`。
+詳細規則見 `Docs/Design/22b_Live2D_Flow.md`（固定流程甲），AI 重畫的研究見 `Docs/Design/22c_Object_Generation.md`，程式說明見 `Docs/Code/README.md`（每支程式的呼叫流程、參數、檔案格式）。
 
 1. **找骨架**：`Tools/art/live_layers.py parts <角色> <服裝>`（姿勢偵測，寫 `fig_joints.json`；偵測錯要手動修）
 2. **拆圖層**：`Tools/art/see_through.py <角色> <服裝>`（拆層模型；`--rebuild` 不用顯示卡重排）

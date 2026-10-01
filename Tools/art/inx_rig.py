@@ -10,7 +10,7 @@ Writes <work>/live/<hero>/<series>/<hero>_<series>.inx unless an output path is 
 
 With a See-through split (<work>/live/<hero>/<series>/st/, parts.json) rig_st builds the fine model: eyelids,
 eyes, brows, head turn with depth, hair physics, arms (in shoulder / elbow / wrist pieces when the split has them)
-and the weapon in its hand; see Docs/Code/Live2D.md section 5. Without it, rig builds the coarse model below.
+and the weapon in its hand; see Docs/Code/05_Rig.md. Without it, rig builds the coarse model below.
 
 Coarse model (puppet origin = centre of full.png, pixels):
     Root

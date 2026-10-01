@@ -12,7 +12,7 @@
 | 綁定 | 自動綁定 `Tools/art/inx_rig.py`，產生 Inochi2D `.inx`；需要時再進 Inochi Creator 精修。檢查：`rig_check.py`（靜止時跟原圖比）、`rig_stress.py`（轉關節找破洞和殘影） |
 | 遊戲裡播放 | 自己用 GDScript 寫的 Inochi2D 播放器（`InochiPuppet`、`LivePortrait`），電腦和手機都能跑 |
 
-程式的呼叫流程與每個函式的說明：[Code/Live2D.md](../Code/Live2D.md)。
+程式的呼叫流程與每個函式的說明：[Code/README.md](../Code/README.md)。
 
 ## 2026-09-30 的查證與試作
 

@@ -9,7 +9,7 @@ extends Node2D
 ##   - parts are drawn back to front by zSort (higher = further back); a composite draws its own parts as a group
 ##   - masks: a part with "Mask" masks only shows where its masks are drawn (soft edge, no threshold); a
 ##     ClipToLower part shows only over the part drawn just below it; dodge masks are not supported
-## The call flow is described in Docs/Code/Live2D.md.
+## The call flow is described in Docs/Code/07_Player.md.
 ##   - SimplePhysics drivers (pendulum / spring pendulum, RK4 in 10 ms steps) push a parameter each frame
 ## Use: var p := InochiPuppet.new(); p.load_model("res://…/model.inx"); add_child(p); p.set_param("Eye:: Left:: Blink", 1.0)
 

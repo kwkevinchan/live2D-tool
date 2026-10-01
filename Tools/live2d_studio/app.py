@@ -1,5 +1,5 @@
 """Live 2D 工作室: one local web page for the animated portraits' fixed flow 甲 (Docs/Design/22b, code flow
-Docs/Code/Live2D.md section 10).
+Docs/Code/08_Studio.md).
 
     myenv/Scripts/python.exe Tools/live2d_studio/app.py      (or Tools/live2d_studio/start.bat) -> http://127.0.0.1:7861
 
