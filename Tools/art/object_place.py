@@ -242,6 +242,11 @@ def main():
                 json.dump(meta, open(os.path.join(st, "parts.json"), "w"))
             print("  %s-front: %d px" % (p, int(front.sum())), flush=True)
         Image.fromarray(img).save(path)
+        meta = json.load(open(os.path.join(st, "parts.json")))   # marked as drawn: the rig keeps its own colours
+        for q in meta["order_back_to_front"]:
+            if q["name"] == p:
+                q["drawn"] = os.path.basename(a.gen) if not a.merge else ""
+        json.dump(meta, open(os.path.join(st, "parts.json"), "w"))
         print("%s <- %s: %d px%s" % (p, os.path.basename(a.gen), int((img[..., 3] > 0).sum()),
                                      " (plate pixels kept where it shows)" if a.merge else ""), flush=True)
     return 0

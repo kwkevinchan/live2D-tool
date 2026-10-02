@@ -483,6 +483,9 @@ BODY_ORDER = ["hidden", "legwear", "thigh-l", "thigh-r", "footwear", "bottomwear
 WAIST_TURN, HIP_TURN, KNEE_TURN, ANKLE_TURN = 0.6, 1.2, 1.6, 0.8   # radians at the parameters' ends
 GOWN_HIP, GOWN_KNEE = 0.3, 0.5   # under a skirt past the knees the legs only move inside it
 SKIRT_FOLLOW = 0.8               # how much of a hip's turn the skirt over that leg takes (22b: pushed by the thigh)
+# the hair's swings are read 3x as strongly (the angle; the stretch as it is): at 1x a head snap or a run moved the
+# ends of Freya's long hair by about 5 px, too little to see (2026-10-02)
+HAIR_GAIN, HAIR_KINDS = 3.0, ("lock", "ends", "ponytail")
 SHOULDER_TURN, ELBOW_TURN, WRIST_TURN, WEAPON_TURN = 1.4, 1.6, 0.8, 3.1   # radians at the parameters' ends (a whole weapon may turn half a round)
 # a long weapon (a staff, a spear: taller than half the figure) turns back at the grip by this share of what the arm
 # turns, so it stays nearly upright while the arm swings (Freya's staff swung level with a running arm, 2026-10-02);
@@ -614,7 +617,10 @@ def rig_st(hero, series, out=None):
     head = node("Head", x=head_pos[0], y=head_pos[1], zsort=-0.5)
     hp = lambda pt: pj(pt, head_pos)
     back_hair = add("Back Hair", part_img("back_hair"), 1.1)
-    front_hair = add("Front Hair", as_plate(part_img("front_hair"), full), -0.1)
+    # an AI-drawn front hair (object_place, marked "drawn" in parts.json) keeps its own colours: the plate's pixels
+    # pasted over it put the hat brim and the face that the drawing reaches over into the hair (Freya, 2026-10-02)
+    drawn = {q["name"] for q in parts_meta.get("order_back_to_front", []) if q.get("drawn")}
+    front_hair = add("Front Hair", part_img("front_hair") if "front_hair" in drawn else as_plate(part_img("front_hair"), full), -0.1)
     face = add("Face", part_img("face"), 0.1)
     head_kids = [hp(back_hair), hp(face)]
     feats = []
@@ -695,10 +701,10 @@ def rig_st(hero, series, out=None):
     pb = node("Back Hair Physics", x=0.0, y=-1.2 * face_h, kind="SimplePhysics")
     pb.update({"param": phys_back, "model_type": "SpringPendulum", "map_mode": "AngleLength", "gravity": 1.0,
                "length": float(max(80.0, (hb[3] - hb[1]) * 0.6)), "frequency": 1.1, "angle_damping": 0.35, "length_damping": 0.6,
-               "output_scale": [1.0, 1.0]})
+               "output_scale": [HAIR_GAIN / 2.0, 1.0]})   # the whole back hair: at 3x a jump threw it out sideways
     pf = node("Front Hair Physics", x=0.0, y=-1.2 * face_h, kind="SimplePhysics")
     pf.update({"param": phys_front, "model_type": "SpringPendulum", "map_mode": "AngleLength", "gravity": 1.0,
-               "length": 120.0, "frequency": 1.6, "angle_damping": 0.45, "length_damping": 0.6, "output_scale": [1.0, 1.0]})
+               "length": 120.0, "frequency": 1.6, "angle_damping": 0.45, "length_damping": 0.6, "output_scale": [HAIR_GAIN, 1.0]})
     head_kids += [pb, pf]
     head["children"] = head_kids
 
@@ -880,7 +886,8 @@ def rig_st(hero, series, out=None):
         ln, fq, dmp, _ = SWING[kind]
         n = node("%s Physics" % label, x=pos[0], y=pos[1], kind="SimplePhysics")
         n.update({"param": uid(), "model_type": "SpringPendulum", "map_mode": "AngleLength", "gravity": 1.0, "length": ln,
-                  "frequency": fq, "angle_damping": dmp, "length_damping": 0.6, "output_scale": [1.0, 1.0]})
+                  "frequency": fq, "angle_damping": dmp, "length_damping": 0.6,
+                  "output_scale": [HAIR_GAIN if kind in HAIR_KINDS else 1.0, 1.0]})
         swing_names[n["param"]] = label
         return n
 

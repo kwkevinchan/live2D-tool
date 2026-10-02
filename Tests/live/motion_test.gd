@@ -20,12 +20,15 @@ const OBJECT_PARTS := ["Weapon", "Weapon Back", "Body Accessory"]
 const PACKS := {
 	"arms": [["Topwear", "Hidden Body", "Neck", "Upper Arm", "Forearm", "Hand"], ["Arm::"]],
 	"legs": [["Bottomwear", "Hidden Pelvis", "Thigh", "Shin", "Foot"], ["Leg::", "Body:: Lean"]],
-	"head": [["Neck", "Topwear", "Back Hair", "Face", "Ears", "Nose", "Mouth", "Eye", "Iris", "Eyelash", "Eyebrow",
-		"Front Hair", "Headwear", "Side", "Bangs", "Hair Ends", "Ponytail", "Ahoge", "Ribbon", "Earring", "Eyewear"],
+	"head": [["Neck", "Topwear", "Face", "Ears", "Nose", "Mouth", "Eye", "Iris", "Eyelash", "Eyebrow", "Earring",
+		"Eyewear"],   # the hair and its ornaments (a hat worn on it too) are a pack of their own, swings on
 		["Head::", "Eye:: Blink", "Mouth:: Open", "Brow:: Up"]],
 	"body": [["Topwear", "Hidden Body", "Neck", "Chest", "Bottomwear", "Hidden Pelvis", "Cape"], ["Body::", "Breath"]],
 	"weapon": [["Weapon", "Hand", "Forearm"], ["Weapon:: Turn", "Arm:: Left:: Wrist", "Arm:: Right:: Wrist"]],
 	"held": [["Other Held", "Hand", "Forearm", "Upper Arm"], ["Arm::"]],
+	# run without nophys: the hair's own swing is what is checked (the face only to see where the head is)
+	"hair": [["Back Hair", "Front Hair", "Side", "Bangs", "Hair Ends", "Ponytail", "Ahoge", "Headwear", "Ribbon", "Face"],
+		["Head:: Yaw", "Head:: Pitch", "Head:: Roll"]],
 }
 const PACK_SWEEP := 1.2
 ## the set, in order: [key, name]
@@ -184,7 +187,7 @@ func _record(motion: String) -> void:
 			for p in puppet.params:
 				var v: Vector2 = p["value"]
 				var d: Vector2 = _defaults.get(p["name"], Vector2.ZERO)
-				if not v.is_equal_approx(d) and not p["driven"]:
+				if not v.is_equal_approx(d):   # the swings' own values too: the sheet picks their biggest frames
 					vals[p["name"]] = v.x if not p["is_vec2"] else [v.x, v.y]
 			log.append({"frame": f / 2, "params": vals, "offset": [puppet.root_offset.x, puppet.root_offset.y],
 				"scale": [puppet.root_scale.x, puppet.root_scale.y]})

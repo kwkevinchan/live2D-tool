@@ -41,16 +41,19 @@ TABLE = [
     _p("nose", "鼻", "face", desc="nose", region="head"),
     _p("ears", "耳朵", "face", pair=True, desc="ear", region="head", prefix=True),
     _p("neck", "脖子", "face", "required", desc="neck"),
-    _p("headwear", "帽子", "face", desc="hat"),
-    _p("headwear-front", "帽子的前半", "face", desc="hat"),
+
     _p("eyewear", "眼鏡、護目鏡", "face", desc="glasses, goggles", attach="head", z="depth"),
     _p("earwear", "耳飾", "face", desc="earrings", region="head", attach="head", z="depth", swing="ribbon"),
-    _p("ribbon", "髮帶", "face", desc="hair ribbon", attach="head", z="depth", swing="ribbon", prefix=True),
     _p("earring", "耳環", "face", desc="earring", attach="head", z="depth", swing="ribbon", prefix=True),
     _p("leftover-head", "脖子以上的雜物", "face"),
     # 2 hair (each piece swings)
     _p("front_hair", "前髮", "hair", "required", desc="bangs, hair"),
     _p("back_hair", "後髮", "hair", "required", desc="long hair"),
+    # hair ornaments go with the hair, and a hat worn on the head is one (the user, 2026-10-02): they sit on it and
+    # are checked swinging with it
+    _p("headwear", "帽子", "hair", desc="hat"),
+    _p("headwear-front", "帽子的前半", "hair", desc="hat"),
+    _p("ribbon", "髮帶", "hair", desc="hair ribbon", attach="head", z="depth", swing="ribbon", prefix=True),
     _p("side_hair", "側髮（長髮）", "hair", desc="long hair"),
     _p("side_lock", "側髮", "hair", desc="lock of hair", attach="head", z="depth", swing="lock", prefix=True),
     _p("bangs", "瀏海", "hair", desc="bangs", attach="head", z="depth", swing="lock", prefix=True),

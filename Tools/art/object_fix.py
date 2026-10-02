@@ -34,6 +34,7 @@ import part_names as P               # noqa: E402
 GREY = (200, 200, 205)
 MODEL_SIDE = 1024      # the longer side of what the model paints
 MARGIN = 48
+OVERLAP = 10           # --split-hair: px a cut-off lock keeps above its cut (left in the layer above it too)
 # what each part is, for the prompt: part_names.py "desc" (the hero's look and outfit come from her character LoRA)
 # the skeleton reach of a limb piece: (from pivot, to pivot, how far past "to" it goes, as a share of the bone)
 REACH = {"upperarm": ("shoulder", "elbow", 0.12), "forearm": ("elbow", "wrist", 0.1), "hand": ("wrist", None, 0.0),
@@ -259,11 +260,14 @@ def carve_ops(a, ld, st, meta):
         # a lock beside the face: below the eyes and out past the face's sides
         side = on & (yy > cy) & (np.abs(xx - cx) > 0.3 * fh)
         side = ndimage.binary_opening(side, iterations=2) & on
+        # each lock also takes OVERLAP px above its cut, left in the bangs too: a swinging lock opens no gap
+        lap = on & (yy > cy - OVERLAP) & (yy <= cy) & (np.abs(xx - cx) > 0.3 * fh)
         for sd, m in (("r", side & (xx < cx)), ("l", side & (xx >= cx))):   # the character's right is the picture's left
             if m.sum() < 150:
                 continue
             piece = np.zeros_like(img)
-            piece[m] = img[m]
+            mm = m | (lap & ((xx < cx) if sd == "r" else (xx >= cx)))
+            piece[mm] = img[mm]
             img[m, 3] = 0
             _new_layer(st, meta, "front_hair", "side_lock-%s" % sd, piece, False)
             print("front_hair: %d px -> side_lock-%s" % (int(m.sum()), sd), flush=True)
@@ -275,12 +279,41 @@ def carve_ops(a, ld, st, meta):
         m = on.copy()
         m[:line] = False
         if m.sum() > 300:
+            m_lap = on.copy()
+            m_lap[:line - OVERLAP] = False   # the ends reach OVERLAP px up under the hair they hang from
             piece = np.zeros_like(img)
-            piece[m] = img[m]
+            piece[m_lap] = img[m_lap]
             img[m, 3] = 0
-            _new_layer(st, meta, "back_hair", "hair_ends", piece, True)
+            m = m_lap
+            n_ends = max(1, a.hair_ends)
+            if n_ends == 1:
+                _new_layer(st, meta, "back_hair", "hair_ends", piece, True)
+            else:   # long hair in strands that swing on their own: along its own drawn lines, roughly where thinnest
+                xs = np.nonzero(m.any(0))[0]
+                x0, x1 = xs.min(), xs.max() + 1
+                cover = m[:, x0:x1].sum(0).astype(float)
+                cuts, w = [], x1 - x0
+                for k in range(1, n_ends):
+                    lo, hi = int(w * (k / n_ends - 0.12)), int(w * (k / n_ends + 0.12))
+                    cuts.append(x0 + lo + int(np.argmin(ndimage.uniform_filter1d(cover, 9)[lo:hi])))
+                edges = [x0] + cuts + [x1]
+                # grown from a seed line down the middle of each piece, stopping at the drawn lines: the borders
+                # fall on the strands' own outlines (a straight cut opens a seam when they swing apart)
+                from skimage.segmentation import watershed
+                seeds = np.zeros(m.shape, int)
+                for k in range(n_ends):
+                    mid = (edges[k] + edges[k + 1]) // 2
+                    seeds[:, mid - 2:mid + 3][m[:, mid - 2:mid + 3]] = k + 1
+                elev = ndimage.gaussian_filter(255.0 - piece[..., :3].max(-1).astype(float), 1.0)
+                group = watershed(elev, seeds, mask=m) - 1
+                for k in range(n_ends):
+                    s_ = ndimage.binary_dilation(group == k, iterations=2) & m   # a little over the neighbours
+                    pc = np.zeros_like(img)
+                    pc[s_] = piece[s_]
+                    _new_layer(st, meta, "back_hair", "hair_ends-%d" % (k + 1), pc, True)
+                print("back_hair: hair ends cut across at x %s" % cuts, flush=True)
             Image.fromarray(img).save(os.path.join(st, "part_back_hair.png"))
-            print("back_hair: %d px below row %d -> hair_ends" % (int(m.sum()), line), flush=True)
+            print("back_hair: %d px below row %d -> hair ends (%d)" % (int(m.sum()), line, n_ends), flush=True)
     json.dump(meta, open(pjp, "w"))
     return 0
 
@@ -796,6 +829,7 @@ def main():
     ap.add_argument("--carve-copy", action="store_true",
                     help="copy, don't cut: the part keeps its pixels under the new layer (a chest bounces on a top "
                          "that stays whole, so no seam opens at the cut's edge)")
+    ap.add_argument("--hair-ends", type=int, default=1, help="--split-hair: the long hair's ends in this many strands")
     ap.add_argument("--split-hair", action="store_true",
                     help="front_hair -> bangs + side_lock-l/-r (locks hanging beside the face); back_hair -> back_hair "
                          "+ hair_ends (below the shoulders): each piece swings on its own")
