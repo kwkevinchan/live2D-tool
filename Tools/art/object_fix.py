@@ -140,33 +140,45 @@ def bone(part, pv):
     return (a, b) if b else None
 
 
-def capped(part, name, pv):
-    """a limb piece with a round cap on each end of its bone (as rig_parts cuts them: both pieces of a joint overlap
-    round it, so a bent elbow or knee opens no crack); the cap takes the piece's own nearest colour. A mirrored piece
-    only touches its neighbour at the joint point (the user, 2026-10-02: "手肘斷了")"""
+NEXT = {"upperarm": {1: "forearm"}, "forearm": {0: "upperarm", 1: "hand"}, "hand": {0: "forearm"},
+        "thigh": {1: "shin"}, "shin": {0: "thigh", 1: "foot"}, "foot": {0: "shin"}}   # the piece across each joint
+
+
+def capped(part, name, pv, st):
+    """a limb piece with a round cap at each joint it shares with the next piece (as rig_parts cuts them: both pieces
+    overlap round the joint, so a bent elbow or knee opens no crack). A mirrored piece only touched its neighbour at
+    the joint (the user, 2026-10-02: "手肘斷了"). The cap sits where the two pieces meet, as wide as the meeting (a cap
+    sized by the wider piece or centred on a pivot off to one side stood out as a ball), in one colour: the piece's
+    own median there (nearest colours came out as streaks of the fringe)"""
     b = bone(name, pv)
-    if not b:
+    k = kind_of(name)
+    if not b or k not in NEXT:
         return part, 0
     out = part.copy()
     on = part[..., 3] > 128
     if not on.any():
         return part, 0
-    dt = ndimage.distance_transform_edt(on)
     core = ndimage.binary_erosion(on, iterations=3)   # colours from inside: the edge is a light antialiased fringe
     core = core if core.any() else on
     yy, xx = np.mgrid[0:on.shape[0], 0:on.shape[1]]
     added = 0
-    k = kind_of(name)   # the joints between two limb pieces; a shoulder or hip sits on the body (as rig_parts)
-    ends = [b[0]] if k in ("hand", "foot") else [b[1]] if k in ("upperarm", "thigh") else [b[0], b[1]]
-    for j in ends:
-        near = np.hypot(xx - j[0], yy - j[1]) <= 20
-        if not (near & on).any():
+    for end, nk in NEXT[k].items():
+        j = b[end]
+        f = os.path.join(st, "part_%s%s.png" % (nk, name[len(k):]))
+        if not os.path.exists(f):
             continue
-        r = float(dt[near].max()) + 3   # about half the limb's width there
-        disc = (np.hypot(xx - j[0], yy - j[1]) <= r) & ~on
-        ring = core & (np.hypot(xx - j[0], yy - j[1]) <= 1.5 * r)   # one colour, the piece's own there (a sleeve's
-        src = part[ring if ring.any() else on][:, :3]                 # black), not streaks of its neighbours
-        out[disc, :3] = np.median(src, 0).astype(np.uint8)
+        nb = np.asarray(Image.open(f).convert("RGBA"))[..., 3] > 128
+        meet = (ndimage.binary_dilation(on, iterations=4) & ndimage.binary_dilation(nb, iterations=4)
+                & (np.hypot(xx - j[0], yy - j[1]) <= 40))
+        if meet.sum() < 20:
+            continue
+        ys, xs = np.nonzero(meet)
+        c = (xs.mean(), ys.mean())
+        r = 0.5 * max(xs.max() - xs.min(), ys.max() - ys.min())   # the limb's width where the two meet
+        d = np.hypot(xx - c[0], yy - c[1])
+        disc = (d <= r) & ~on
+        ring = core & (d <= 1.5 * r)
+        out[disc, :3] = np.median(part[ring if ring.any() else on][:, :3], 0).astype(np.uint8)
         out[disc, 3] = 255
         added += int(disc.sum())
     return out, added
@@ -928,14 +940,14 @@ def main():
     part = clean(part, erase)
     if a.mirror:
         part = mirrored(a.part, st, pv, (part.shape[1], part.shape[0]))
-        part, n = capped(part, a.part, pv)   # the joints overlap as in a cut piece
+        part, n = capped(part, a.part, pv, st)   # the joints overlap as in a cut piece
         print("%s: round caps at the joints, %d px" % (a.part, n), flush=True)
     if a.cap:   # in place: a joint that cracks when it bends
         orig = os.path.join(st, "_orig")
         os.makedirs(orig, exist_ok=True)
         if not os.path.exists(os.path.join(orig, "part_%s.png" % a.part)):
             shutil.copy(path, os.path.join(orig, "part_%s.png" % a.part))
-        part, n = capped(np.asarray(Image.open(path).convert("RGBA")), a.part, pv)
+        part, n = capped(np.asarray(Image.open(path).convert("RGBA")), a.part, pv, st)
         Image.fromarray(part).save(path)
         print("%s: round caps at the joints, %d px (original in st/_orig/)" % (a.part, n), flush=True)
         return 0

@@ -685,7 +685,10 @@ def rig_st(hero, series, out=None):
     # hair in pieces and things on the head (object_fix --split-hair / --carve, See-through's eyewear / earwear): the
     # layers part_names.py hangs on the head; those with a swing kind swing on their own below where they hang
     head_swing = []   # (part, kind, hung at (x, y) in the picture)
-    layer_names = sorted(f[5:-4] for f in os.listdir(st) if f.startswith("part_") and f.endswith(".png"))
+    # the layers in use (parts.json), not every part_*.png in the folder: a renamed backup was rigged as a hair strand
+    in_use = [q["name"] for q in parts_meta.get("order_back_to_front", [])
+              if os.path.exists(os.path.join(st, "part_%s.png" % q["name"]))]
+    layer_names = sorted(in_use or [f[5:-4] for f in os.listdir(st) if f.startswith("part_") and f.endswith(".png")])
     for n in layer_names:
         e = P.lookup(n)
         if e is None or e.attach != "head" or np.asarray(part_img(n))[..., 3].max() <= 8:
@@ -745,9 +748,8 @@ def rig_st(hero, series, out=None):
             root_kids.append(pj(kept[n]))
             if e.swing:
                 body_swing.append((kept[n], e.swing))
-    for f in sorted(os.listdir(st)):
-        n = f[5:-4] if f.startswith("part_") and f.endswith(".png") else None
-        if n and n not in known and real(n):   # anything else See-through finds (and the plate has) stays with the body
+    for n in layer_names:
+        if n not in known and real(n):   # anything else See-through finds (and the plate has) stays with the body
             kept["Other " + n] = add("Other " + n, part_img(n), 0.36)
             root_kids.append(pj(kept["Other " + n]))   # "Other …": the objects pack (hidden when the character is tested alone)
     if left_body is not None:
