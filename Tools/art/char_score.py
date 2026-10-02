@@ -18,6 +18,11 @@ All three are ONNX, run on the CPU with onnxruntime (no torch, no GPU); the file
     python Tools/art/char_score.py objects <hero> <series> [--ref <series> ...]
         each object (st/part_*.png) and each pack (the objects of a pack stacked) against the same-named object /
         pack of the hero's other series (default: every other series with an st/ split)
+    python Tools/art/char_score.py flag <hero> <series> <out.json> <image|folder> ... [--every N] [--limit 0.10]
+        the flow's hint (wf, a "?" command at L8, L9, L11): ccip of each render (folders walked, every Nth frame),
+        the scores and the ones over the limit in <out.json>; exit 1 when any is over
+    python Tools/art/char_score.py flag-packs <hero> <series> <out.json> [--packs face,hair,clothes] [--limit 0.10]
+        the same per pack against the same pack of the hero's other splits (L6, L6b); none = skipped, exit 0
     python Tools/art/char_score.py experiment <out_dir>
         the 22d experiment on Freya: makes the bad cases in <out_dir>, scores good / bad / other character at
         object, pack and whole level, writes <out_dir>/scores.json and prints the tables
@@ -41,6 +46,7 @@ import part_names as P   # noqa: E402
 WORK = C.WORK
 CCIP_SAME = 0.178    # ccip's own threshold (metrics.json of caformer-24): below = the same character
 TOP = 3              # a score is the mean over the closest TOP references
+FLAG_LIMIT = 0.10    # 22d: about twice the worst good render; over it the flow hands the picture to the reviewer
 MODELS = {
     "ccip": ("deepghs/ccip_onnx", "ccip-caformer-24-randaug-pruned/model_feat.onnx"),
     "ccip_metric": ("deepghs/ccip_onnx", "ccip-caformer-24-randaug-pruned/model_metrics.onnx"),
@@ -431,6 +437,56 @@ def cmd_objects(args):
             print("%-7s %-22s %s" % (level, n, "  ".join("%s %.3f" % (m, r[m]) for m in args.models)))
 
 
+def _exclude(series):
+    """the references made from the plate under test: a pose_apose* split drops every A-pose"""
+    return "apose" if series.startswith("pose_apose") else series
+
+
+def _write_flag(out, kind, limit, rows, note=""):
+    over = [r for r in rows if r["ccip"] > limit]
+    os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
+    json.dump({"kind": kind, "model": "ccip", "limit": limit, "note": note, "over": [r["label"] for r in over],
+               "scores": {r["label"]: round(float(r["ccip"]), 3) for r in rows}},
+              open(out, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    for r in rows:
+        print("%-36s ccip %.3f%s" % (r["label"], r["ccip"], "  OVER" if r["ccip"] > limit else ""))
+    print("%d of %d over %.2f%s -> %s" % (len(over), len(rows), limit, (" (%s)" % note) if note else "", out))
+    sys.exit(1 if over else 0)
+
+
+def cmd_flag(args):
+    """a hint for the flow (wf, a '?' command): ccip of renders against the hero's other pictures; exit 1 when any is
+    over the limit. Folders are walked (motion frames: <motion>/anim_*.png), every Nth picture of each folder kept"""
+    imgs = []
+    for p in args.images:
+        if not os.path.isdir(p):
+            imgs += [p] if os.path.exists(p) else []
+            continue
+        for d, _, fs in sorted(os.walk(p)):
+            fs = sorted(f for f in fs if f.endswith(".png"))
+            imgs += [os.path.join(d, f) for f in fs[::args.every]]
+    refs = whole_refs(args.hero, _exclude(args.series))
+    if not imgs or not refs:
+        _write_flag(args.out, "whole", args.limit, [], "no pictures" if not imgs else "no references")
+    rows = run_set([("test", os.path.relpath(p, os.path.commonpath(imgs) if len(imgs) > 1 else os.path.dirname(p)), p)
+                    for p in imgs], refs, ["ccip"])
+    _write_flag(args.out, "whole", args.limit, rows)
+
+
+def cmd_flag_packs(args):
+    """the same hint per pack (face, hair, clothes by default: the packs 22d found it works on) against the same pack
+    of the hero's other splits; the first split of a character has no references and is skipped"""
+    test = packs_of(load_parts(args.hero, args.series))
+    others = [os.path.basename(os.path.dirname(os.path.dirname(d))) for d in glob.glob(os.path.join(WORK, "live", args.hero, "*", "st", "parts.json"))]
+    rpacks = [packs_of(load_parts(args.hero, r)) for r in sorted(others) if r != args.series]
+    rows = []
+    for n in args.packs:
+        ref = [d[n] for d in rpacks if n in d]
+        if n in test and ref:
+            rows.append(run_set([("pack", n, test[n])], ref, ["ccip"])[0])
+    _write_flag(args.out, "pack", args.limit, rows, "" if rows else "no other split of %s to compare" % args.hero)
+
+
 def cmd_experiment(args):
     out = args.out
     os.makedirs(out, exist_ok=True)
@@ -576,8 +632,22 @@ def main():
     e.add_argument("out")
     for p in (s, o, e):
         p.add_argument("--models", default="ccip,wd,dino", type=lambda v: v.split(","))
+    f = sub.add_parser("flag")
+    f.add_argument("hero")
+    f.add_argument("series")
+    f.add_argument("out")
+    f.add_argument("images", nargs="+")
+    f.add_argument("--every", type=int, default=1)
+    fp = sub.add_parser("flag-packs")
+    fp.add_argument("hero")
+    fp.add_argument("series")
+    fp.add_argument("out")
+    fp.add_argument("--packs", default="face,hair,clothes", type=lambda v: v.split(","))
+    for p in (f, fp):
+        p.add_argument("--limit", type=float, default=FLAG_LIMIT)
     args = ap.parse_args()
-    {"score": cmd_score, "objects": cmd_objects, "experiment": cmd_experiment}[args.cmd](args)
+    {"score": cmd_score, "objects": cmd_objects, "experiment": cmd_experiment, "flag": cmd_flag,
+     "flag-packs": cmd_flag_packs}[args.cmd](args)
 
 
 if __name__ == "__main__":

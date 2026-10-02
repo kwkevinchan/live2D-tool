@@ -266,8 +266,9 @@ order = ["hidden", "bottomwear", "legwear", "thigh", "shin", "foot", "topwear", 
          "neck", "face", "ears", "eye", "irides", "eyelash", "eyebrow", "mouth", "nose", "upperarm", "forearm", "hand",
          "sleeve", "objects", "held", "back_hair", "hair_ends", "side", "front_hair", "bangs", "headwear", "ribbon"]
 outputs = ["st/part_*.png", "st/parts.json", "st/outline/*", "st/fix/*", "st/gen/*", "st/_orig/*"]
-images = ["st/groups/assemble_{1..6}.jpg"]
-focus = ["22b#L6", "改前後順序用 manual（改 parts.json 的順序）"]
+then = ["? python Tools/art/char_score.py flag-packs {hero} {series} {dir}/_score/L6_packs.json"]   # 22d：臉、頭髮、衣服跟其他拆好的版本比
+images = ["st/groups/assemble_{1..6}.jpg", "_score/L6_packs.json"]
+focus = ["22b#L6", "改前後順序用 manual（改 parts.json 的順序）", "_score 的分數超過界線的那一包要仔細看（只是提醒，不是結論）"]
 fix = ["to_objects"]
 
   [[step.stage]]
@@ -338,11 +339,12 @@ id = "shots"
 check = "L8"
 after = ["pack_motion"]
 cmd = ["? python Tools/art/rig_check.py {hero}/{series}",
-       "{godot} --audio-driver Dummy --path . res://Tests/live/puppet_preview.tscn -- {inx} {dir}/_shots"]
+       "{godot} --audio-driver Dummy --path . res://Tests/live/puppet_preview.tscn -- {inx} {dir}/_shots",
+       "? python Tools/art/char_score.py flag {hero} {series} {dir}/_score/L8.json {dir}/_shots"]   # 22d：像不像這個角色，超過界線的要看
 inputs = ["{name}_st.inx"]
 outputs = ["_shots/000_rest.png"]
 images = ["_shots/000_rest.png", "_shots/030_yaw_right.png", "_shots/060_yaw_left_blink.png", "_shots/090_mouth_open.png",
-          "_shots/150_settled.png", "{checkdir}/{name}_check.jpg"]
+          "_shots/150_settled.png", "{checkdir}/{name}_check.jpg", "_score/L8.json"]
 focus = ["22b#L8", "check/<名稱>_check.jpg 跟原圖的比對只當參考"]
 reopens = true
 fix = ["to_objects", "rerig"]
@@ -355,11 +357,12 @@ per_item = "motion"
 items = ["walk", "jump", "run", "wave", "head", "face", "idle", "hair", "hit", "glance"]
 cmd = ["{godot} --audio-driver Dummy --path . res://Tests/live/motion_test.tscn -- {inx} {dir}/_motions_nophys bare nophys",
        "{godot} --audio-driver Dummy --path . res://Tests/live/motion_test.tscn -- {inx} {dir}/_motions_phys bare"]
-then = ["python Tools/art/motion_sheet.py {dir}/_motions_nophys", "python Tools/art/motion_sheet.py {dir}/_motions_phys"]
+then = ["python Tools/art/motion_sheet.py {dir}/_motions_nophys", "python Tools/art/motion_sheet.py {dir}/_motions_phys",
+        "? python Tools/art/char_score.py flag {hero} {series} {dir}/_score/L9.json {dir}/_motions_nophys --every=10"]
 after_fix = "cmd"
 inputs = ["{name}_st.inx"]
 outputs = ["_motions_nophys/report.json", "_motions_phys/report.json"]
-images = ["_motions_nophys/sheet_*.jpg", "_motions_phys/sheet_*.jpg", "_motions_nophys/report.json"]
+images = ["_motions_nophys/sheet_*.jpg", "_motions_phys/sheet_*.jpg", "_motions_nophys/report.json", "_score/L9.json"]
 focus = ["22b#L9", "先看關掉擺動（_motions_nophys），再看打開擺動（_motions_phys）"]
 rounds = "plate"
 reopens = true
@@ -395,11 +398,12 @@ id = "integrate"
 check = "L11"
 after = ["motions", "objects_check"]   # 6、7 都通過才能做
 cmd = "{godot} --audio-driver Dummy --path . res://Tests/live/motion_test.tscn -- {inx} {dir}/_motions_all"
-then = ["python Tools/art/motion_sheet.py {dir}/_motions_all"]
+then = ["python Tools/art/motion_sheet.py {dir}/_motions_all",
+        "? python Tools/art/char_score.py flag {hero} {series} {dir}/_score/L11.json {dir}/_motions_all --every=10"]
 after_fix = "cmd"
 inputs = ["{name}_st.inx"]
 outputs = ["_motions_all/report.json"]
-images = ["_motions_all/sheet_*.jpg"]
+images = ["_motions_all/sheet_*.jpg", "_score/L11.json"]
 focus = ["22b#L11"]
 rounds = "plate"
 reopens = true

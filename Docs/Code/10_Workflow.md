@@ -100,7 +100,7 @@ check = "L4"
 
 **代入的值**：`{hero}`、`{series}`、`{dir}`（工作資料夾）、`{live}`（`<work>/live`）、`{art_work}`、`{name}`（`<角色>_default` 或 `<角色>_<服裝>`，綁定和檢查圖的名字）、`{godot}`、`{plate_dir}`（立繪所在的資料夾）、`{mv_python}`、`{repo}`；加上 `[flow.vars]`、步驟的 `vars`、`foreach` 的一列、結論的 `params`。物件迴圈裡另有 `{part}`（物件名字）、`{pack}`（它在第幾包）、`{pick}`（L5b 挑中的候選，完整路徑）。
 
-**指令的寫法**：先照空白切成一段一段，再代入，所以帶空白的值（AI 重畫的指令）還是一段。代入後是空的片段整段拿掉：選填的旗標寫成一段 `--weapon={pts}`，沒給就不加。開頭 `python` 換成目前的 Python（`LIVE2D_PYTHON` 可改）。指令前面加 `?`：結束代碼只當提示，寫進審查包的 `hints`（`rig_check`、`object_check`、`rig_stress`、`outline --check` 有問題時回 1，22b：看圖，不看數字下結論）；其他指令失敗就停住。`{same}` 是這一步自己的指令（換種子重跑）。
+**指令的寫法**：先照空白切成一段一段，再代入，所以帶空白的值（AI 重畫的指令）還是一段。代入後是空的片段整段拿掉：選填的旗標寫成一段 `--weapon={pts}`，沒給就不加。開頭 `python` 換成目前的 Python（`LIVE2D_PYTHON` 可改）。指令前面加 `?`：結束代碼只當提示，寫進審查包的 `hints`（`rig_check`、`object_check`、`rig_stress`、`outline --check`、`char_score flag` 有問題時回 1，22b：看圖，不看數字下結論；`char_score` 的分數寫在 `_score/`，見 22d）；其他指令失敗就停住。`{same}` 是這一步自己的指令（換種子重跑）。
 
 **步驟的欄位**
 
