@@ -274,6 +274,12 @@ def defringe(name, st, tol=110):
     rim = on & ~ndimage.binary_erosion(on, iterations=2) & (cnt > 0.02)
     off = rim & (np.abs(rgb - mean).sum(-1) > tol)
     a[off, 3] = 0
+    on = a[..., 3] > 0   # dots a few px off the edge (inside the 4 px kept above): any piece under 40 px
+    lab, n = ndimage.label(on)
+    sz = ndimage.sum(on, lab, range(1, n + 1)) if n else []
+    dots = np.isin(lab, [i + 1 for i, v in enumerate(sz) if v < 40])
+    a[dots, 3] = 0
+    off |= dots
     orig = os.path.join(st, "_orig", "part_%s.png" % name)
     os.makedirs(os.path.dirname(orig), exist_ok=True)
     if not os.path.exists(orig):
