@@ -144,44 +144,67 @@ NEXT = {"upperarm": {1: "forearm"}, "forearm": {0: "upperarm", 1: "hand"}, "hand
         "thigh": {1: "shin"}, "shin": {0: "thigh", 1: "foot"}, "foot": {0: "shin"}}   # the piece across each joint
 
 
+def meeting(part_on, nb_on, j, xx, yy):
+    """where two limb pieces meet near joint j: (centre, half its width), or None"""
+    m = (ndimage.binary_dilation(part_on, iterations=4) & ndimage.binary_dilation(nb_on, iterations=4)
+         & (np.hypot(xx - j[0], yy - j[1]) <= 40))
+    if m.sum() < 20:
+        return None
+    ys, xs = np.nonzero(m)
+    return (float(xs.mean()), float(ys.mean())), 0.5 * max(xs.max() - xs.min(), ys.max() - ys.min())
+
+
 def capped(part, name, pv, st):
-    """a limb piece with a round cap at each joint it shares with the next piece (as rig_parts cuts them: both pieces
-    overlap round the joint, so a bent elbow or knee opens no crack). A mirrored piece only touched its neighbour at
-    the joint (the user, 2026-10-02: "手肘斷了"). The cap sits where the two pieces meet, as wide as the meeting (a cap
-    sized by the wider piece or centred on a pivot off to one side stood out as a ball), in one colour: the piece's
-    own median there (nearest colours came out as streaks of the fringe)"""
+    """a limb piece drawn on past its joint, as the bones are (the user, 2026-10-02: "延伸前臂和後臂把他接起來"):
+    the upper arm's humerus ends in a round spool the elbow turns about, its centre the axis, and the forearm's ulna
+    wraps round it from below. So each piece is carried on along its own bone, past where it meets the next piece,
+    by repeating its last slice a few px inside the end (the sleeve's black, folds and outline go on; the end's own
+    light fringe is covered), and rounded off on a circle about the meeting's centre as wide as the meeting.
+    Returns (piece, px added, {joint: meeting centre}): the centre is the pivot the joint should turn about (a
+    pivot to one side swings the piece off its neighbour)"""
     b = bone(name, pv)
     k = kind_of(name)
     if not b or k not in NEXT:
-        return part, 0
+        return part, 0, {}
     out = part.copy()
     on = part[..., 3] > 128
     if not on.any():
-        return part, 0
-    core = ndimage.binary_erosion(on, iterations=3)   # colours from inside: the edge is a light antialiased fringe
-    core = core if core.any() else on
-    yy, xx = np.mgrid[0:on.shape[0], 0:on.shape[1]]
-    added = 0
+        return part, 0, {}
+    yy, xx = np.mgrid[0:on.shape[0], 0:on.shape[1]].astype(float)
+    added, centres = 0, {}
+    jn = {"upperarm": ("shoulder", "elbow"), "forearm": ("elbow", "wrist"), "hand": ("wrist", None),
+          "thigh": ("hip", "knee"), "shin": ("knee", "ankle"), "foot": ("ankle", None)}[k]
     for end, nk in NEXT[k].items():
-        j = b[end]
+        j = np.asarray(b[end], float)
         f = os.path.join(st, "part_%s%s.png" % (nk, name[len(k):]))
         if not os.path.exists(f):
             continue
-        nb = np.asarray(Image.open(f).convert("RGBA"))[..., 3] > 128
-        meet = (ndimage.binary_dilation(on, iterations=4) & ndimage.binary_dilation(nb, iterations=4)
-                & (np.hypot(xx - j[0], yy - j[1]) <= 40))
-        if meet.sum() < 20:
+        mt = meeting(on, np.asarray(Image.open(f).convert("RGBA"))[..., 3] > 128, j, xx, yy)
+        if not mt:
             continue
-        ys, xs = np.nonzero(meet)
-        c = (xs.mean(), ys.mean())
-        r = 0.5 * max(xs.max() - xs.min(), ys.max() - ys.min())   # the limb's width where the two meet
+        c, r = np.asarray(mt[0]), mt[1]
+        u = np.asarray(b[end], float) - np.asarray(b[1 - end], float)   # along the bone, out over the joint
+        u /= max(1e-6, np.linalg.norm(u))
+        t = (xx - c[0]) * u[0] + (yy - c[1]) * u[1]             # how far past the meeting, along the bone
         d = np.hypot(xx - c[0], yy - c[1])
-        disc = (d <= r) & ~on
-        ring = core & (d <= 1.5 * r)
-        out[disc, :3] = np.median(part[ring if ring.any() else on][:, :3], 0).astype(np.uint8)
-        out[disc, 3] = 255
-        added += int(disc.sum())
-    return out, added
+        inner = np.abs((xx - c[0]) * -u[1] + (yy - c[1]) * u[0]) <= r   # within the limb's width
+        t0 = -0.35 * r                                           # the slice the piece is carried on from
+        zone = (t > t0) & inner & ((t <= 0) | (d <= r))          # from the slice to a round end about c
+        sx = np.rint(xx - (t - t0) * u[0]).astype(int).clip(0, on.shape[1] - 1)
+        sy = np.rint(yy - (t - t0) * u[1]).astype(int).clip(0, on.shape[0] - 1)
+        ok = zone & on[sy, sx]
+        new = ok & ~on
+        out[ok, :3] = part[sy[ok], sx[ok], :3]
+        out[ok, 3] = 255
+        # round the joint the piece's own edge (a light antialiased fringe, an outline) would lie over the other
+        # piece as a seam line: there it takes the joint's main colour (a sleeve's black, a bare knee's skin)
+        near = (d <= 1.3 * r) & (out[..., 3] > 128)
+        main = np.median(out[near][:, :3], 0)
+        seam = near & (np.abs(out[..., :3].astype(int) - main).sum(-1) > 120)
+        out[seam, :3] = main.astype(np.uint8)
+        added += int(new.sum())
+        centres[jn[end]] = [round(float(c[0]), 1), round(float(c[1]), 1)]
+    return out, added, centres
 
 
 def face_middle(st):
@@ -905,8 +928,9 @@ def main():
                     help="one layer for both sides (eyewhite): <part>-l / <part>-r, cut at the face's middle")
     ap.add_argument("--drop-part", action="store_true", help="take an invented layer out of parts.json (kept in st/_orig/)")
     ap.add_argument("--mirror", action="store_true", help="start from the other side's piece, flipped onto this bone")
-    ap.add_argument("--cap", action="store_true", help="in place: a round cap on each end of a limb piece's bone, so a "
-                                                       "bent joint opens no crack (a mirrored piece gets them itself)")
+    ap.add_argument("--cap", action="store_true", help="in place: a limb piece drawn on past each joint it shares with the next "
+                                                       "piece, rounded about where they meet, and that joint's pivot "
+                                                       "moved there (a mirrored piece is drawn on itself)")
     ap.add_argument("--dry", action="store_true", help="only the sheet of what would be filled, no ComfyUI")
     a = ap.parse_args()
     if a.denoise is None:
@@ -940,16 +964,23 @@ def main():
     part = clean(part, erase)
     if a.mirror:
         part = mirrored(a.part, st, pv, (part.shape[1], part.shape[0]))
-        part, n = capped(part, a.part, pv, st)   # the joints overlap as in a cut piece
-        print("%s: round caps at the joints, %d px" % (a.part, n), flush=True)
+        part, n, _ = capped(part, a.part, pv, st)   # carried on past its joints, as a cut piece overlaps
+        print("%s: drawn on past its joints, %d px" % (a.part, n), flush=True)
     if a.cap:   # in place: a joint that cracks when it bends
         orig = os.path.join(st, "_orig")
         os.makedirs(orig, exist_ok=True)
         if not os.path.exists(os.path.join(orig, "part_%s.png" % a.part)):
             shutil.copy(path, os.path.join(orig, "part_%s.png" % a.part))
-        part, n = capped(np.asarray(Image.open(path).convert("RGBA")), a.part, pv, st)
+        part, n, centres = capped(np.asarray(Image.open(path).convert("RGBA")), a.part, pv, st)
         Image.fromarray(part).save(path)
-        print("%s: round caps at the joints, %d px (original in st/_orig/)" % (a.part, n), flush=True)
+        side = a.part[-2:]
+        for jn, cxy in centres.items():   # the joint turns about the meeting's centre (the humerus spool's axis)
+            key = jn + "_" + side[-1]
+            if key in meta.get("pivots", {}):
+                print("  pivot %s %s -> %s" % (key, meta["pivots"][key], cxy), flush=True)
+                meta["pivots"][key] = cxy
+        json.dump(meta, open(os.path.join(st, "parts.json"), "w"))
+        print("%s: drawn on past its joints, %d px (original in st/_orig/)" % (a.part, n), flush=True)
         return 0
     shape = lines = None
     if a.extend_under:
