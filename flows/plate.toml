@@ -183,6 +183,11 @@ stage = "place"
 cmd = "python Tools/art/object_fix.py {hero} {series} {part} --drop-specks={n}"
 params = { n = "int" }
 
+[fix.cap]
+stage = "place"
+cmd = "python Tools/art/object_fix.py {hero} {series} {part} --cap"
+note = "四肢零件在骨頭兩端補一塊圓，關節彎的時候不裂開（鏡像的會自己補）"
+
 # ------------------------------------------------------------------ 步驟
 
 [[step]]
@@ -282,7 +287,7 @@ fix = ["to_objects"]
   images = ["st/outline/{part}.jpg"]
   focus = ["22b#L5a", "通過時從 pass_menu 挑出候選的做法（被擋住的用 AI 重畫，四肢先試鏡像）"]
   fix = ["outline_marks", "split_front", "carve"]
-  pass_fix = ["edit_fast", "edit_slow", "fix_outline", "fix_fill", "mirror", "flat", "drop_specks"]
+  pass_fix = ["edit_fast", "edit_slow", "fix_outline", "fix_fill", "mirror", "flat", "drop_specks", "cap"]
 
   [[step.stage]]
   id = "candidates"
@@ -298,7 +303,7 @@ fix = ["to_objects"]
   then = ["? python Tools/art/outline.py {hero} {series} {part} --check", "python Tools/art/split_groups.py {hero} {series}"]
   images = ["st/groups/parts_{pack}.jpg", "st/groups/assemble_{pack}.jpg"]
   focus = ["22b#L5c"]
-  fix = ["place_box", "place_fit", "place_plain", "apply", "flat", "drop_specks", "edit_fast", "edit_slow", "fix_fill",
+  fix = ["place_box", "place_fit", "place_plain", "apply", "flat", "drop_specks", "cap", "edit_fast", "edit_slow", "fix_fill",
          "mirror", "outline_marks", "carve", "split_front"]
 
 [[step]]

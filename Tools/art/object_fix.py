@@ -140,6 +140,38 @@ def bone(part, pv):
     return (a, b) if b else None
 
 
+def capped(part, name, pv):
+    """a limb piece with a round cap on each end of its bone (as rig_parts cuts them: both pieces of a joint overlap
+    round it, so a bent elbow or knee opens no crack); the cap takes the piece's own nearest colour. A mirrored piece
+    only touches its neighbour at the joint point (the user, 2026-10-02: "手肘斷了")"""
+    b = bone(name, pv)
+    if not b:
+        return part, 0
+    out = part.copy()
+    on = part[..., 3] > 128
+    if not on.any():
+        return part, 0
+    dt = ndimage.distance_transform_edt(on)
+    core = ndimage.binary_erosion(on, iterations=3)   # colours from inside: the edge is a light antialiased fringe
+    core = core if core.any() else on
+    yy, xx = np.mgrid[0:on.shape[0], 0:on.shape[1]]
+    added = 0
+    k = kind_of(name)   # the joints between two limb pieces; a shoulder or hip sits on the body (as rig_parts)
+    ends = [b[0]] if k in ("hand", "foot") else [b[1]] if k in ("upperarm", "thigh") else [b[0], b[1]]
+    for j in ends:
+        near = np.hypot(xx - j[0], yy - j[1]) <= 20
+        if not (near & on).any():
+            continue
+        r = float(dt[near].max()) + 3   # about half the limb's width there
+        disc = (np.hypot(xx - j[0], yy - j[1]) <= r) & ~on
+        ring = core & (np.hypot(xx - j[0], yy - j[1]) <= 1.5 * r)   # one colour, the piece's own there (a sleeve's
+        src = part[ring if ring.any() else on][:, :3]                 # black), not streaks of its neighbours
+        out[disc, :3] = np.median(src, 0).astype(np.uint8)
+        out[disc, 3] = 255
+        added += int(disc.sum())
+    return out, added
+
+
 def face_middle(st):
     """x of the face's middle: halfway between the eyes (eyewhite, else irides), or None"""
     for k in ("eyewhite", "irides"):
@@ -861,6 +893,8 @@ def main():
                     help="one layer for both sides (eyewhite): <part>-l / <part>-r, cut at the face's middle")
     ap.add_argument("--drop-part", action="store_true", help="take an invented layer out of parts.json (kept in st/_orig/)")
     ap.add_argument("--mirror", action="store_true", help="start from the other side's piece, flipped onto this bone")
+    ap.add_argument("--cap", action="store_true", help="in place: a round cap on each end of a limb piece's bone, so a "
+                                                       "bent joint opens no crack (a mirrored piece gets them itself)")
     ap.add_argument("--dry", action="store_true", help="only the sheet of what would be filled, no ComfyUI")
     a = ap.parse_args()
     if a.denoise is None:
@@ -894,6 +928,17 @@ def main():
     part = clean(part, erase)
     if a.mirror:
         part = mirrored(a.part, st, pv, (part.shape[1], part.shape[0]))
+        part, n = capped(part, a.part, pv)   # the joints overlap as in a cut piece
+        print("%s: round caps at the joints, %d px" % (a.part, n), flush=True)
+    if a.cap:   # in place: a joint that cracks when it bends
+        orig = os.path.join(st, "_orig")
+        os.makedirs(orig, exist_ok=True)
+        if not os.path.exists(os.path.join(orig, "part_%s.png" % a.part)):
+            shutil.copy(path, os.path.join(orig, "part_%s.png" % a.part))
+        part, n = capped(np.asarray(Image.open(path).convert("RGBA")), a.part, pv)
+        Image.fromarray(part).save(path)
+        print("%s: round caps at the joints, %d px (original in st/_orig/)" % (a.part, n), flush=True)
+        return 0
     shape = lines = None
     if a.extend_under:
         return extend_under(a, ld, st, meta)
