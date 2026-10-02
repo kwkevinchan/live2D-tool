@@ -1,6 +1,7 @@
 """Live 2D sources for a heroine outfit (art studio, tab "Live 2D"). Needs the local ComfyUI server.
 
     python Tools/art/live_layers.py parts   <hero> <series>     the standing figure cut into parts by its skeleton
+    python Tools/art/live_layers.py joints  <hero> <series>     fig_joints.jpg: the joints of fig_joints.json on the plate, named
     python Tools/art/live_layers.py mouths  <hero> <series>     mouth shapes for talking (inpaint of the mouth only)
     python Tools/art/live_layers.py scene   <hero> <series> [n] the scene: character cut out and cut into parts, the
                                                                 background painted in behind her and split into n depth layers
@@ -306,6 +307,32 @@ def parts(hero, series):
     print("parts ->", d, flush=True)
 
 
+def joints_view(hero, series):
+    """fig_joints.jpg: the plate with the joints of fig_joints.json as they are now, named (fig_overview.png keeps the
+    detected ones; after a hand correction this is the picture to check)"""
+    d = out_dir(hero, series)
+    j = json.load(open(os.path.join(d, "fig_joints.json")))
+    src = Image.open(os.path.join(src_dir(hero, series), "full.png")).convert("RGBA")
+    im = Image.new("RGBA", src.size, (200, 200, 206, 255))
+    im.alpha_composite(src)
+    im = im.convert("RGB")
+    dr = ImageDraw.Draw(im)
+    for n, v in j.items():
+        if n in ("face", "parts") or not isinstance(v, list) or len(v) < 2:
+            continue
+        x, y = v[0], v[1]
+        dr.ellipse((x - 7, y - 7, x + 7, y + 7), outline=(255, 0, 255), width=3)
+        dr.text((x + 9, y - 7), n, fill=(255, 0, 255))
+    g = (j.get("weapon_grip") or {}).get("point")
+    if g:
+        dr.rectangle((g[0] - 9, g[1] - 9, g[0] + 9, g[1] + 9), outline=(0, 160, 255), width=3)
+    missing = [n for n, v in j.items() if v is None]
+    if missing:
+        dr.text((8, 8), "missing: " + ", ".join(missing), fill=(255, 0, 0))
+    im.save(os.path.join(d, "fig_joints.jpg"), quality=90)
+    print("joints ->", os.path.join(d, "fig_joints.jpg"), "missing:", missing or "none", flush=True)
+
+
 def legacy_layers(d, joints, src):
     """layer_hair / layer_face / layer_body.png: the three-layer set Tools/art/inx_rig.py (branch live2d, the Inochi2D
     auto-rig) reads; body = torso + arms + legs"""
@@ -498,4 +525,4 @@ if __name__ == "__main__":
     if cmd == "scene":
         scene(hero, series, int(sys.argv[4]) if len(sys.argv) > 4 else 4)
     else:
-        {"parts": parts, "mouths": mouths, "preview": preview}[cmd](hero, series)
+        {"parts": parts, "mouths": mouths, "preview": preview, "joints": joints_view}[cmd](hero, series)

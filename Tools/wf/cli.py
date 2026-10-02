@@ -50,7 +50,7 @@ def status(r):
 def main(argv=None):
     for stream in (sys.stdout, sys.stderr):   # a cp950 console can't show every character: replaced, not fatal
         if hasattr(stream, "reconfigure"):
-            stream.reconfigure(errors="replace")
+            stream.reconfigure(encoding="utf-8", errors="replace")   # the console code page garbles Chinese
     ap = argparse.ArgumentParser(prog="wf", description="流程程式：照 flows/plate.toml 跑一張立繪")
     sub = ap.add_subparsers(dest="cmd", required=True)
     for name in ("run", "status", "review", "verdict", "redo", "unblock"):

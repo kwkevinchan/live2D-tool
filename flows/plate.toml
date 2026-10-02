@@ -200,9 +200,11 @@ check = "L1"
 after = ["plate"]
 cmd = "python Tools/art/live_layers.py parts {hero} {series}"
 inputs = ["full.png"]
-outputs = ["fig_joints.json", "fig_overview.png"]
-images = ["fig_overview.png"]
-focus = ["22b#L1", "改關節點用 manual：手改 fig_joints.json（原本的另存 fig_joints_detected.json）"]
+then = ["python Tools/art/live_layers.py joints {hero} {series}"]   # 現在的關節點畫在立繪上（手改之後也重畫）
+outputs = ["fig_joints.json", "fig_overview.png", "fig_joints.jpg"]
+images = ["fig_joints.jpg", "fig_overview.png"]
+focus = ["22b#L1", "看 fig_joints.jpg（現在的關節點、名字）；fig_overview.png 是自動抓的，手改之後不會變",
+         "改關節點用 manual：手改 fig_joints.json（原本的另存 fig_joints_detected.json）"]
 fix = ["rerun"]
 
 [[step]]
@@ -212,8 +214,9 @@ after = ["joints"]
 cmd = "python Tools/art/see_through.py {hero} {series} --seed={seed}"
 vars = { seed = 42 }
 inputs = ["full.png", "fig_joints.json"]
-outputs = ["st/part_*.png", "st/parts.json", "st/_stack_vs_plate.jpg"]
-images = ["st/_stack_vs_plate.jpg", "st/parts.json"]
+then = ["python Tools/art/layer_sheet.py {dir}/st"]   # 每一層單獨看（修過之後也重畫）
+outputs = ["st/part_*.png", "st/parts.json", "st/_stack_vs_plate.jpg", "st/_layers.jpg"]
+images = ["st/_layers.jpg", "st/_stack_vs_plate.jpg", "st/parts.json"]
 focus = ["22b#L2", "被擋住的地方猜錯的先記下來，用 to_objects 交給物件迴圈"]
 fix = ["reseed", "make_face", "split_lr", "drop_part", "sort_hair", "move_hair"]
 pass_fix = ["to_objects"]
