@@ -514,7 +514,8 @@ class Run:
         lf = job.get("last_fix")
         if lf:
             k = "%s:%s" % (lf, problem)
-            job.setdefault("fails", {})[k] = job["fails"].get(k, 0) + 1
+            fails = job.setdefault("fails", {})   # (a step job may not have it yet: the right side is read first)
+            fails[k] = fails.get(k, 0) + 1
             if job["fails"][k] >= self.flow.limit("same_way_fails") and k not in job.setdefault("banned", []):
                 job["banned"].append(k)
                 self.note("%s：%s 禁用（同一個問題失敗 %d 次）" % (key, k, job["fails"][k]))

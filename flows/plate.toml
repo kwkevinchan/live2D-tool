@@ -269,7 +269,8 @@ order = ["hidden", "bottomwear", "legwear", "thigh", "shin", "foot", "topwear", 
          "neck", "face", "ears", "eye", "irides", "eyelash", "eyebrow", "mouth", "nose", "upperarm", "forearm", "hand",
          "sleeve", "objects", "held", "back_hair", "hair_ends", "side", "front_hair", "bangs", "headwear", "ribbon"]
 outputs = ["st/part_*.png", "st/parts.json", "st/outline/*", "st/fix/*", "st/gen/*", "st/_orig/*"]
-then = ["? python Tools/art/char_score.py flag-packs {hero} {series} {dir}/_score/L6_packs.json"]   # 22d：臉、頭髮、衣服跟其他拆好的版本比
+then = ["python Tools/art/split_groups.py {hero} {series}",   # 組裝檢查手改之後重畫組裝圖
+        "? python Tools/art/char_score.py flag-packs {hero} {series} {dir}/_score/L6_packs.json"]   # 22d：臉、頭髮、衣服跟其他拆好的版本比
 images = ["st/groups/assemble_{1..6}.jpg", "_score/L6_packs.json"]
 focus = ["22b#L6", "改前後順序用 manual（改 parts.json 的順序）", "_score 的分數超過界線的那一包要仔細看（只是提醒，不是結論）"]
 fix = ["to_objects"]

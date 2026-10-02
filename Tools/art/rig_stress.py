@@ -137,7 +137,7 @@ def ghosts(old, new, rest_rgb, posed):
     return ndimage.binary_opening(old & ~ndimage.binary_dilation(new, iterations=3) & same, iterations=GHOST_WIDTH)
 
 
-MOVING = ("upperarm-", "forearm-", "hand-", "handwear-", "objects", "thigh-", "shin-", "foot-")
+MOVING = ("upperarm-", "forearm-", "hand-", "handwear-", "objects", "held-", "thigh-", "shin-", "foot-")   # held-: a fireball moves with its hand
 
 
 def body_area(ld, plate_alpha):
@@ -146,9 +146,10 @@ def body_area(ld, plate_alpha):
     st = os.path.join(ld, "st")
     near = ndimage.binary_dilation(plate_alpha > 8, iterations=2)
     body = np.zeros(plate_alpha.shape, bool)
-    for f in os.listdir(st):
-        if f.startswith("part_") and f.endswith(".png") and not f[5:].startswith(MOVING):
-            body |= np.asarray(Image.open(os.path.join(st, f)).convert("RGBA"))[..., 3] > 128
+    for n in [q["name"] for q in load_meta(ld).get("order_back_to_front", [])]:   # the layers in use, not stray files
+        f = os.path.join(st, "part_%s.png" % n)
+        if os.path.exists(f) and not n.startswith(MOVING):
+            body |= np.asarray(Image.open(f).convert("RGBA"))[..., 3] > 128
     return ndimage.binary_fill_holes(ndimage.binary_closing(body & near, iterations=6))
 
 
