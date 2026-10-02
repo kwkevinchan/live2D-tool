@@ -130,7 +130,7 @@ main(hero, series)
 
 每件檢查：
 
-- **`whole(alpha)`**：分成幾塊（60 像素以下的碎點不算；中心落在最大塊凸包裡的小塊算同一個東西，記為「浮動」，例如杖頭的寶珠）、輪廓內的洞有多大。
+- **`whole(alpha)`**：分成幾塊（60 像素以下的碎點不算；中心落在最大塊凸包裡的小塊算同一個東西，記為「浮動」，例如杖頭的寶珠）、輪廓內的洞有多大（有浮動小塊時，它所在的那個開口不算洞：杖頭圓環裡的空間是設計，2026-10-02）。
 - 武器要一整塊、要有握點；洞超過面積的 1%（至少 40 像素）算有問題。
 - 每 15 度轉一格做成動圖，每 30 度一格排成檢查圖。
 
@@ -139,14 +139,16 @@ main(hero, series)
 ## 5. 標準動作（`Tests/live/motion_test.gd`）
 
 ```
-<Godot> --path . res://Tests/live/motion_test.tscn -- <模型.inx> <輸出資料夾> [動作 ...] [bare]
+<Godot> --path . res://Tests/live/motion_test.tscn -- <模型.inx> <輸出資料夾> [動作 ...] [bare] [nophys] [pack=<包>]
 ```
 
 ```
 _ready()
 ├─ InochiPuppet.new() → load_model → add_child → set_process(false)
 ├─ _fit()                                         縮放置中
-├─ 記下每個參數的預設值；bare → 關掉武器和物件的節點
+├─ 記下每個參數的預設值；nophys → 關掉擺動
+├─ pack=<包> → 只留 PACKS[包] 的零件，_sweep = 這包的參數，_record("pack") → pack_<包>/，結束
+├─ bare → 關掉武器和物件的節點
 ├─ _record(motion) × 每個動作
 │  └─ 每一格
 │     ├─ 參數回到預設；_put("Breath", ...)
@@ -178,7 +180,9 @@ _ready()
 - 全部都有 `Breath`。跳躍、跑步、受擊用 `root_offset`、`root_scale` 移動整個模型（物理才感覺得到）。
 - 每個動作從模型的預設值開始。模型缺的參數記在 `report.json`（`{動作: {name, missing}}`）；分段手腳缺的記成「手臂分段」「腿分段」這類說明。
 - **`bare`**：關掉 `Weapon`、`Weapon Back`、`Body Accessory` 和所有 `Other …` 部件，先驗人物本身（第 6 步）；不加就是整合驗證（第 8 步）。
-- 工作室會把每個動作的截圖做成動圖。LLM 檢查（L9、L11）改看「最大動作截圖」：每個動作挑參數到最大、最小的幾格排成一張，並分關掉擺動、打開擺動兩次看。這個工具和關掉擺動的選項還沒做（見 22b「三層檢查與重做上限」）。
+- **`nophys`**：關掉所有擺動（頭髮、裙子、披風不動），先看關節，再打開看擺動。
+- 每個動作寫 `frames.json`（每張存檔的參數值、整個模型的移動），`Tools/art/motion_sheet.py <資料夾> [--max N]` 挑出參數最大、最小、移動最多的幾格，原尺寸排成 `sheet_<動作>.jpg`（LLM 讀圖時動圖只看得到第一格，所以 L9、L11 看這張）。工作室另外把截圖做成動圖給人看。
+- **`pack=<包>`（部件動作測試，22b 第 4b 步、L6b）**：只畫 `PACKS` 裡這一包的零件（照節點名稱開頭比對：`arms`、`legs`、`head`、`body`、`weapon`、`held`），把這包的參數（照參數名稱開頭比對、跳過被擺動帶動的）一個一個轉：每個 `PACK_SWEEP`（1.2 秒）0 → +1 → -1 → 0，不加呼吸。存在 `<輸出>/pack_<包>/`，同樣寫 `frames.json`，用 `motion_sheet.py --max 16` 做總表。
 
 ## 6. 單一模型預覽（`Tests/live/puppet_preview.gd`）
 

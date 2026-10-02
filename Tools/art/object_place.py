@@ -12,6 +12,11 @@ is hidden or empty. The part's earlier version is kept in st/_orig/ the first ti
                      (default face,front_hair) becomes <part>-front, listed after the front hair; the rest stays
   --fit [layers]     move and scale the drawing onto where the plate draws the thing first (default: the --as
                      parts' own layers): the shift and scale that cover most of it (±40 px, 0.85-1.15)
+  --box x0,y0,x1,y1  put the drawing's own box onto this one (one scale, middles matched): the edit model drew the
+                     thing bigger or off its place and the plate's split of it is too broken for --fit to go by
+                     (the box read off the plate by whoever checks it)
+  --clear <layers>   clear where these layers show the plate (the face, the eyes): a hat brim or bangs drawn lower
+                     than the plate has them would hide the eyes the plate shows (nothing of the plate is pasted)
   --clip-above Y     drop what lies above row Y (a skirt drawn with a bit of the top it hangs from)
   --no-skin          drop skin-coloured pixels (legs seen through a skirt's slit)
 """
@@ -81,6 +86,20 @@ def fit(gen, target, turns=(-12, -8, -4, 0, 4, 8, 12), shift=40):
     return out.copy(), (round(float(v), 3), round(float(score(1.0, 0, 0, 0.0)), 3), sc, dx, dy, rot)
 
 
+def to_box(gen, box):
+    """the drawing scaled (one scale: the mean of across and down) and moved so its box sits on box"""
+    ys, xs = np.nonzero(gen[..., 3] > 0)
+    x0, y0, x1, y1 = xs.min(), ys.min(), xs.max() + 1, ys.max() + 1
+    sc = ((box[2] - box[0]) / (x1 - x0) + (box[3] - box[1]) / (y1 - y0)) / 2.0
+    cx, cy = (x0 + x1) / 2.0, (y0 + y1) / 2.0
+    ox, oy = (box[0] + box[2]) / 2.0, (box[1] + box[3]) / 2.0
+    h, w = gen.shape[:2]
+    coef = (1 / sc, 0, cx - ox / sc, 0, 1 / sc, cy - oy / sc)
+    out = np.asarray(Image.fromarray(gen).transform((w, h), Image.AFFINE, coef, Image.BICUBIC)).copy()
+    print("  box: scale %.2f, middle (%d,%d) -> (%d,%d)" % (sc, cx, cy, ox, oy), flush=True)
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("hero")
@@ -95,6 +114,8 @@ def main():
     ap.add_argument("--wide", action="store_true", help="--fit: turns up to ±40 degrees, shifts up to ±100 px, and the "
                                                          "drawing mirrored too (a bow drawn curving the other way)")
     ap.add_argument("--no-skin", action="store_true")
+    ap.add_argument("--box", default="", help="x0,y0,x1,y1: the drawing's box goes onto this one")
+    ap.add_argument("--clear", default="", help="layers: this part stays clear where they show the plate")
     a = ap.parse_args()
     ld = os.path.join(WORK, "live", a.hero, a.series)
     st = os.path.join(ld, "st")
@@ -131,6 +152,18 @@ def main():
         else:
             gen, (v, v0, sc, dx, dy, rot) = fit(gen, target)
         print("  fit: overlap %.2f -> %.2f (scale %.2f, shift %+d,%+d, turn %+.0f deg)" % (v0, v, sc, dx, dy, rot), flush=True)
+    if a.box:
+        gen = to_box(gen, [float(v) for v in a.box.split(",")])
+    if a.clear:
+        shown = np.zeros(gen.shape[:2], bool)
+        for n in a.clear.split(","):
+            f = os.path.join(st, "part_%s.png" % n)
+            if os.path.exists(f):
+                o = np.asarray(Image.open(f).convert("RGBA")).astype(int)
+                shown |= (o[..., 3] > 128) & (np.abs(o[..., :3] - full[..., :3]).max(-1) < 30)
+        gen = gen.copy()
+        print("  clear: %d px over what the plate shows of %s" % (int((shown & (gen[..., 3] > 0)).sum()), a.clear), flush=True)
+        gen[shown, 3] = 0
     meta = json.load(open(os.path.join(st, "parts.json")))
     pv = dict(meta.get("pivots") or {})
 

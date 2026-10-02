@@ -85,6 +85,9 @@ TABLE = [
     # 6 other
     _p("leftover", "雜物", "other"),
     _p("quiver", "箭筒", "other", desc="quiver", prefix=True),   # an object: "Other …" on the body (hidden in bare)
+    # held-l / held-r: what a hand holds that isn't the weapon (a fireball on the palm): inx_rig hangs it from that
+    # wrist as "Other Held …", hidden with the objects when the character is tested alone
+    _p("held-", "手上拿的東西（武器以外）", "other", desc="object held in the hand", prefix=True),   # no region: a fireball reaches far past the hand
     _p("tail", "尾巴", "other", desc="tail", attach="body", z=0.62, swing="tail"),
     _p("wings", "翅膀", "other", desc="wings", attach="body", z=0.66, swing="wings"),
 ]

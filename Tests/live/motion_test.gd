@@ -7,12 +7,27 @@ extends Node2D
 ## "nophys" turns the pendulums off (hair, skirt, cape stay put): the joints are checked first, the swings after.
 ## Each motion's frames.json lists, per saved frame, the parameters set and where the whole model was moved to, so
 ## Tools/art/motion_sheet.py can pick the frames of the biggest moves (the LLM looks at those, not at the GIFs).
+## "pack=<name>" is the pack motion test (Docs/Design/22b, between a pack's assembly and the whole motions): only that
+## pack's pieces and the painted-in body under them are drawn, and each of its parameters is turned to +1 and -1 in
+## turn (PACK_SWEEP seconds each), so a seam or a hole isn't covered by the other packs; recorded as "pack_<name>".
 ## "bare" hides the weapon and the other objects: the character is verified on her own first, the weapon and the
 ## objects on their own (Tools/art/object_check.py), and only then together (Docs/Design/22b).
 
 const MOTION_SECS := 4.0
 ## parts hidden by "bare": the weapon and the objects that aren't the character
 const OBJECT_PARTS := ["Weapon", "Weapon Back", "Body Accessory"]
+## pack motion tests: name -> [the pieces drawn (node name prefixes), the parameters turned (name prefixes)]
+const PACKS := {
+	"arms": [["Topwear", "Hidden Body", "Neck", "Upper Arm", "Forearm", "Hand"], ["Arm::"]],
+	"legs": [["Bottomwear", "Hidden Pelvis", "Thigh", "Shin", "Foot"], ["Leg::", "Body:: Lean"]],
+	"head": [["Neck", "Topwear", "Back Hair", "Face", "Ears", "Nose", "Mouth", "Eye", "Iris", "Eyelash", "Eyebrow",
+		"Front Hair", "Headwear", "Side", "Bangs", "Hair Ends", "Ponytail", "Ahoge", "Ribbon", "Earring", "Eyewear"],
+		["Head::", "Eye:: Blink", "Mouth:: Open", "Brow:: Up"]],
+	"body": [["Topwear", "Hidden Body", "Neck", "Chest", "Bottomwear", "Hidden Pelvis", "Cape"], ["Body::", "Breath"]],
+	"weapon": [["Weapon", "Hand", "Forearm"], ["Weapon:: Turn", "Arm:: Left:: Wrist", "Arm:: Right:: Wrist"]],
+	"held": [["Other Held", "Hand", "Forearm", "Upper Arm"], ["Arm::"]],
+}
+const PACK_SWEEP := 1.2
 ## the set, in order: [key, name]
 const MOTIONS := [["walk", "走路"], ["jump", "跳躍"], ["run", "跑步"], ["wave", "揮手"], ["head", "頭部動作"],
 	["face", "眨眼與表情"], ["idle", "呼吸待機"], ["hair", "甩頭"], ["hit", "受擊"], ["glance", "轉身看"]]
@@ -24,6 +39,8 @@ var _missing := {}            ## motion -> {parameter: true} it wanted and the m
 var _motion := ""
 var _defaults := {}           ## parameter -> its value as loaded
 var _wave := "Right"          ## the arm that waves: the free one when the other holds a weapon that shows
+var _secs := MOTION_SECS      ## this motion's length
+var _sweep: Array = []        ## pack test: the parameters turned, in order
 
 
 func _ready() -> void:
@@ -48,6 +65,34 @@ func _ready() -> void:
 		picked.erase("nophys")
 		for d in puppet.drivers:
 			d["enabled"] = false
+	var pack := ""
+	for a in picked.duplicate():
+		if String(a).begins_with("pack="):
+			pack = String(a).substr(5)
+			picked.erase(a)
+	if pack != "":
+		if not PACKS.has(pack):
+			printerr("no pack %s (%s)" % [pack, ", ".join(PACKS.keys())])
+			get_tree().quit(1)
+			return
+		for uuid in puppet.nodes:   # only this pack's pieces are drawn
+			var n: Dictionary = puppet.nodes[uuid]
+			if n.has("verts"):
+				var keep := false
+				for pre in PACKS[pack][0]:
+					if String(n["name"]).begins_with(pre):
+						keep = true
+				n["enabled"] = keep
+		for p in puppet.params:
+			for pre in PACKS[pack][1]:
+				if String(p["name"]).begins_with(pre) and not p["driven"] and not _sweep.has(p["name"]):
+					_sweep.append(p["name"])
+		_secs = PACK_SWEEP * maxf(1.0, _sweep.size())
+		await _record("pack")
+		print("pack %s: %d parameters turned" % [pack, _sweep.size()])
+		DirAccess.rename_absolute(out_dir.path_join("pack"), out_dir.path_join("pack_" + pack))
+		get_tree().quit(0)
+		return
 	if picked.has("bare"):
 		picked.erase("bare")
 		for uuid in puppet.nodes:
@@ -121,13 +166,14 @@ func _record(motion: String) -> void:
 	DirAccess.make_dir_recursive_absolute(dir)
 	for p in puppet.params:   # every motion starts from the model's own defaults
 		p["value"] = _defaults.get(p["name"], Vector2.ZERO)
-	var frames := int(MOTION_SECS * 30.0)
+	var frames := int(_secs * 30.0)
 	var log: Array = []   # per saved frame: {"frame", "params": {name: value}, "offset": [x, y], "scale": [x, y]}
 	for f in frames:
 		var t := f / 30.0
 		puppet.root_offset = Vector2.ZERO
 		puppet.root_scale = Vector2.ONE
-		_put("Breath", 0.5 + 0.5 * sin(t * 1.7))
+		if motion != "pack":
+			_put("Breath", 0.5 + 0.5 * sin(t * 1.7))
 		call("_m_" + motion, t)
 		puppet.update_puppet(1.0 / 30.0)
 		await get_tree().process_frame
@@ -146,6 +192,15 @@ func _record(motion: String) -> void:
 	lf.store_string(JSON.stringify(log))
 	lf.close()
 	print("motion ", motion)
+
+
+## the pack test: each parameter in turn goes 0 -> +1 -> -1 -> 0 (the others at rest)
+func _m_pack(t: float) -> void:
+	var i := int(t / PACK_SWEEP)
+	if i >= _sweep.size():
+		return
+	var u := fmod(t, PACK_SWEEP) / PACK_SWEEP
+	_put(_sweep[i], sin(u * TAU))
 
 
 func _blink(t: float, at: float) -> float:

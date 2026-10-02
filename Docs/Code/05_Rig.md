@@ -185,6 +185,8 @@ Root
 - 握點：`parts.json` 的 `pivots.grip` 優先，沒有才用 `fig_joints.json` 的 `weapon_grip`。
 - 武器：`objects` 經 `clean_objects`，放在 0.27（`over_head` 時放到頭前面）。`objects-back` 放在 1.3（所有東西後面，包括後髮）。
 - **分段手臂**（上臂、前臂、手都有）：`Shoulder` → `Elbow` → `Wrist` 串起來；握武器的手在 `Wrist` 底下多一個 `Grip` 節點，武器排在手指後面一點。有 `sleeve-<側>` 時掛在 `Elbow` 下，有 `tassel` 時掛在 `Grip` 下。
+- **長武器保持直立**：武器比人物一半高（`LONG_WEAPON`）時，手臂的 `Shoulder`、`Elbow`、`Wrist`、`Move` 參數也綁到 `Grip`，反向轉 `UPRIGHT`（80%）：手臂擺動時法杖、長槍大致直立（播放器把同一個節點的綁定相加）。`Weapon:: Turn` 不抵銷。
+- **手上拿的別的東西** `held-l/r`（火球）：掛在那隻手的 `Wrist` 底下（沒分段時掛 `Shoulder`），名字 `Other Held Left/Right`，所以 `bare` 時跟物件一起藏起來。
 - 手臂的前後：照上臂（或整條手臂）在 `body_depths` 的位置；`over_head` 時 -0.8（頭前面）。手、前臂、武器、袖子各往前一點點。
 
 ### 4-6. 腿

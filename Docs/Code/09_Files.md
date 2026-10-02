@@ -123,6 +123,7 @@
 | `side_lock-l/r`、`hair_ends` | 側髮、髮尾 | `object_fix --split-hair` |
 | `eyewear`、`earwear`、`neckwear`、`tail`、`wings` | 眼鏡、耳飾、領飾、尾巴、翅膀 | See-through（眼鏡、耳飾掛頭上；領飾、尾巴、翅膀掛身體） |
 | `chest`、`cape`、`sleeve-l/r`、`bangs`、`ponytail`、`ahoge`、`ribbon`、`earring`、`tassel`、`quiver` | 胸、披風、寬袖、馬尾、呆毛、髮帶、耳環、流蘇、箭筒 | `object_fix --carve`（名字決定綁定時怎麼擺） |
+| `held-l/r` | 手上拿的東西（武器以外：火球） | `object_fix --carve`（分散在幾層時切到同一個名字會合併）；綁在那隻手腕上 |
 
 ## 6. `.inx` 模型檔
 

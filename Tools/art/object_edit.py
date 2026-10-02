@@ -10,8 +10,9 @@ Mage-Flow-Edit-Turbo (Microsoft, 4B, 4 steps) through ComfyUI's native nodes; ne
    part of); --extra pictures (another view angle) go in as further references;
 3. the edit: the instruction, the output the size of the reference (edit models keep the framing, so the object
    lands where it is on the plate);
-4. the white backdrop off (near-white joined to the border), put back at the plate's place: st/gen/<part>_e<seed>.png,
-   and st/gen/<part>_edit.jpg (reference | each result on grey).
+4. the white backdrop off (rembg isnet-anime through cutout.py; --matte white: near-white joined to the border, which
+   keeps white closed in by the object, e.g. inside a bow's string, 2026-10-02), put back at the plate's place:
+   st/gen/<part>_<tag><seed>.png, and st/gen/<part>_<tag>.jpg (reference | each result raw and on grey).
 """
 import argparse
 import os
@@ -115,6 +116,8 @@ def main():
     ap.add_argument("--engine", default="mage", choices=["mage", "qwen"],
                     help="mage: Mage-Flow-Edit-Turbo; qwen: Qwen-Image-Edit-2511 (both local, through ComfyUI)")
     ap.add_argument("--fast", action="store_true", help="--engine qwen: 4 steps with the Lightning LoRA")
+    ap.add_argument("--matte", default="rembg", choices=["rembg", "white"],
+                    help="taking the backdrop off: rembg (cutout.py) or near-white joined to the border")
     a = ap.parse_args()
     a.tag = a.tag or {"mage": "e", "qwen": "qf" if a.fast else "q"}[a.engine]
     ld = os.path.join(WORK, "live", a.hero, a.series)
@@ -159,17 +162,21 @@ def main():
         out = out.resize((w, h), Image.LANCZOS)
         print("seed %d: %.0f s" % (sd, time.time() - t0), flush=True)
         rgb = np.asarray(out).astype(int)
-        alpha = unwhite(rgb)
+        if a.matte == "rembg":
+            import cutout
+            alpha = cutout.cutout(out)[1]
+        else:
+            alpha = np.where(unwhite(rgb), 255, 0)
         res = np.zeros((full.height, full.width, 4), np.uint8)
         res[y0:y1, x0:x1, :3] = rgb
-        res[y0:y1, x0:x1, 3] = np.where(alpha, 255, 0)
+        res[y0:y1, x0:x1, 3] = alpha
         Image.fromarray(res).save(os.path.join(gd, "%s_%s%d.png" % (a.part, a.tag, sd)))
         view = Image.new("RGB", (w, h), (200, 200, 205))
         sub = Image.fromarray(res[y0:y1, x0:x1])
         view.paste(sub, (0, 0), sub)
         tiles.append((out, "seed %d raw" % sd))
         tiles.append((view, "seed %d cut" % sd))
-        print("seed %d: %d px" % (sd, int(alpha.sum())), flush=True)
+        print("seed %d: %d px" % (sd, int((alpha > 128).sum())), flush=True)
     for f in os.listdir(os.path.dirname(tmp)):
         if f.startswith(os.path.basename(tmp)):
             os.remove(os.path.join(os.path.dirname(tmp), f))

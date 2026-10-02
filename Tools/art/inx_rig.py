@@ -484,6 +484,10 @@ WAIST_TURN, HIP_TURN, KNEE_TURN, ANKLE_TURN = 0.6, 1.2, 1.6, 0.8   # radians at 
 GOWN_HIP, GOWN_KNEE = 0.3, 0.5   # under a skirt past the knees the legs only move inside it
 SKIRT_FOLLOW = 0.8               # how much of a hip's turn the skirt over that leg takes (22b: pushed by the thigh)
 SHOULDER_TURN, ELBOW_TURN, WRIST_TURN, WEAPON_TURN = 1.4, 1.6, 0.8, 3.1   # radians at the parameters' ends (a whole weapon may turn half a round)
+# a long weapon (a staff, a spear: taller than half the figure) turns back at the grip by this share of what the arm
+# turns, so it stays nearly upright while the arm swings (Freya's staff swung level with a running arm, 2026-10-02);
+# "Weapon:: Turn" still turns it fully
+LONG_WEAPON, UPRIGHT = 0.5, 0.8
 WEAPON_BACK_Z = 1.3   # behind everything, back hair (0.6 from the head) included
 LOWER_BODY = {"Legs", "Footwear", "Bottomwear", "Hidden Pelvis", "Bottomwear Physics"}   # stay with the pelvis when the waist turns
 OVER_HEAD = -0.8   # in front of the head node (-0.5) and everything on it
@@ -715,7 +719,7 @@ def rig_st(hero, series, out=None):
     known = {"back_hair", "front_hair", "face", "ears", "ears-l", "ears-r", "nose", "mouth", "headwear", "headwear-front", "side_hair", "leftover",
              "legwear", "footwear", "bottomwear", "neck", "topwear", "objects", "objects-back", "handwear-l", "handwear-r", "irides",
              "hidden", "hidden-pelvis"}
-    known |= {"%s-%s" % (k, sd) for k in ("upperarm", "forearm", "hand", "thigh", "shin", "foot") for sd in ("l", "r")}
+    known |= {"%s-%s" % (k, sd) for k in ("upperarm", "forearm", "hand", "thigh", "shin", "foot", "held") for sd in ("l", "r")}
     # hung by the table (head or body), or by their own code below (chest, cape, sleeve, tassel)
     known |= {n for n in layer_names if P.lookup(n) and (P.lookup(n).attach or P.lookup(n).kind in ("chest", "cape", "sleeve", "tassel"))}
     chest = cape = None
@@ -755,6 +759,9 @@ def rig_st(hero, series, out=None):
     # the art split; drawn behind everything so at rest the figure covers it as on the plate, turning with the weapon
     weapon_back = add("Weapon Back", part_img("objects-back"), WEAPON_BACK_Z)         if weapon is not None and have("objects-back") and np.asarray(part_img("objects-back"))[..., 3].max() > 8 else None   # empty: the plate hides none of it
     arm_nodes, arm_params = [], []
+    fig_h = float(np.ptp(np.nonzero(np.asarray(full)[..., 3] > 0)[0]))
+    upright = UPRIGHT if weapon is not None and (weapon.box[3] - weapon.box[1]) > LONG_WEAPON * fig_h else 0.0
+    grip_node = None
     limb_swing = []   # (part, kind, node it hangs from, that node's place in puppet space)
 
     def rel(a, b):
@@ -773,11 +780,13 @@ def rig_st(hero, series, out=None):
         sh_pt = pv("shoulder")
         sh_pos = rel(sh_pt, center)
         holds = weapon is not None and grip.get("hand") == "arm_%s" % key
+        # something else in this hand (a fireball on the palm): goes where the hand goes, an object ("Other …")
+        held = add("Other Held %s" % side, part_img("held-%s" % key), z - 0.003)             if have("held-%s" % key) and np.asarray(part_img("held-%s" % key))[..., 3].max() > 8 else None
         if chain:
             # shoulder -> elbow -> wrist, each piece turning at its joint; the weapon hangs from the hand at its grip
             el_pos, wr_pos = rel(pv("elbow"), center), rel(pv("wrist"), center)
             hand = add("Hand %s" % side, part_img("hand-%s" % key), z - 0.004)
-            wrist_kids = [pj(hand, wr_pos)]
+            wrist_kids = [pj(hand, wr_pos)] + ([pj(held, wr_pos)] if held else [])
             if holds:
                 g_pos = rel(grip["point"], center)
                 weapon.zsort = z - 0.002   # behind the fingers that close around it
@@ -808,10 +817,13 @@ def rig_st(hero, series, out=None):
                     wts = near(top, sh_pt, 0.35 * ua_len)
                     binds.append(deform_binding(top, turn_follow(top, sh_pt, [rng * outw * SLEEVE_FOLLOW, 0.0,
                                                                               -rng * outw * SLEEVE_FOLLOW], wts)))
+                if holds and upright:   # the long weapon turns back at the grip: it stays nearly upright
+                    binds.append(value_binding(grip_node["uuid"], "transform.r.z",
+                                               [-rng * outw * upright, 0.0, rng * outw * upright]))
                 arm_params.append(param("Arm:: %s:: %s" % (side, j), [0.0, 0.5, 1.0], -1.0, 1.0, binds))
         else:
             arm = add("Arm %s" % side, part_img("handwear-%s" % key), z)
-            kids = [pj(arm, sh_pos)]
+            kids = [pj(arm, sh_pos)] + ([pj(held, sh_pos)] if held else [])
             if holds:
                 kids.append(pj(weapon, sh_pos))
                 if weapon_back:
@@ -820,8 +832,11 @@ def rig_st(hero, series, out=None):
         arm_nodes.append(sh)
         root_kids.append(sh)
         out_dir = 1.0 if sh_pt[0] > neck[0] else -1.0
-        arm_params.append(param("Arm:: %s:: Move" % side, [0.0, 0.5, 1.0], -1.0, 1.0, [
-            value_binding(sh["uuid"], "transform.r.z", [ARM_TURN * out_dir, 0.0, -ARM_TURN * out_dir])]))
+        mv = [value_binding(sh["uuid"], "transform.r.z", [ARM_TURN * out_dir, 0.0, -ARM_TURN * out_dir])]
+        if chain and holds and upright:
+            mv.append(value_binding(grip_node["uuid"], "transform.r.z",
+                                    [-ARM_TURN * out_dir * upright, 0.0, ARM_TURN * out_dir * upright]))
+        arm_params.append(param("Arm:: %s:: Move" % side, [0.0, 0.5, 1.0], -1.0, 1.0, mv))
     if weapon is not None and not grip.get("hand"):
         root_kids.append(pj(weapon))
         if weapon_back:

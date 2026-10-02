@@ -667,7 +667,11 @@ def run(hero, series, weapon_pts=None, not_pts=None, weapon_lines=None, match_pl
         for side in ("l", "r"):
             if "hand-%s" % side not in arrs:
                 continue
-            hm = cv2.dilate((arrs["hand-%s" % side][..., 3] > 128).astype(np.uint8), np.ones((9, 9), np.uint8)) > 0
+            on = (arrs["hand-%s" % side][..., 3] > 128).astype(np.uint8)
+            k, lab, st_, _ = cv2.connectedComponentsWithStats(on)
+            if k > 2:   # the hand itself: its biggest piece (a crumb of the weapon's foot pulled the grip down the staff)
+                on = (lab == 1 + int(np.argmax(st_[1:, cv2.CC_STAT_AREA]))).astype(np.uint8)
+            hm = cv2.dilate(on, np.ones((9, 9), np.uint8)) > 0
             touch = (hm & wm).sum()
             if best is None or touch > best[0]:
                 best = (touch, side, hm)

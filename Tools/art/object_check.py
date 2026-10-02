@@ -47,7 +47,12 @@ def whole(alpha):
             if i != main and hull.find_simplex(np.argwhere(lab == i).mean(0)) >= 0:
                 floating += 1
     holes = ndimage.binary_fill_holes(ndimage.binary_closing(on, iterations=2)) & ~on
-    return len(big) - floating, int(ndimage.binary_opening(holes, iterations=1).sum()), floating
+    holes = ndimage.binary_opening(holes, iterations=1)
+    if floating:   # the opening a floating piece sits in (the ring around a staff's orb) is the design, not a hole
+        hl, hn = ndimage.label(ndimage.binary_fill_holes(holes | on) & ~(lab == main))
+        around = np.unique(hl[ndimage.binary_dilation(on & (lab != main), iterations=2) & (hl > 0)])
+        holes &= ~np.isin(hl, around)
+    return len(big) - floating, int(holes.sum()), floating
 
 
 def main(hero, series):

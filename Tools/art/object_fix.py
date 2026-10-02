@@ -233,6 +233,12 @@ def carve_ops(a, ld, st, meta):
             sel = ndimage.binary_closing(sel, iterations=2) & on & area
         piece = np.zeros_like(img)
         piece[sel] = img[sel]
+        dst = os.path.join(st, "part_%s.png" % a.carve)
+        if os.path.exists(dst):   # carving into a layer that exists adds to it (one object strewn over several layers)
+            have_ = np.asarray(Image.open(dst).convert("RGBA")).copy()
+            add_ = (piece[..., 3] > 0) & (have_[..., 3] == 0)
+            have_[add_] = piece[add_]
+            piece = have_
         if not a.carve_copy:
             img[sel, 3] = 0
         Image.fromarray(img).save(os.path.join(st, "part_%s.png" % a.part))
