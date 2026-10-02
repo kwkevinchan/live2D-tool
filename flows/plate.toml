@@ -1,0 +1,414 @@
+# 一張立繪的流程（Docs/Design/22b_Live2D_Flow.md 甲），由流程程式 wf 照著跑（Docs/Design/23_Workflow.md、
+# Docs/Code/10_Workflow.md）。沒寫在這裡的步驟不會被做，寫了的不會被跳過；要跳過只能標 skip = "原因"。
+#
+# 代入的值：{hero} {series} {dir}（工作資料夾）{live} {name}（<hero>_default 或 <hero>_<series>）{godot}
+# {plate_dir} {mv_python}，[flow.vars]，步驟的 vars、foreach 的一列、結論的 params。
+# 一個片段的值是空的，整個片段拿掉：選填的旗標寫成一個片段 --weapon={pts}。
+# 指令前面加 "?"：結束代碼只當提示寫進審查包（rig_check、object_check、rig_stress、outline --check），不當結論。
+
+[flow]
+name = "plate"
+work = "{live}/{hero}/{series}"
+estimate_min = 120          # 整張立繪的預估時間；用掉超過兩倍就停（時限規則）
+docs = { 22b = "Docs/Design/22b_Live2D_Flow.md" }   # focus 的 "22b#L4" 從這份取「各檢查點的注意重點」
+
+[flow.vars]
+inx = "{dir}/{name}_st.inx"
+checkdir = "{live}/check"
+
+[limits]                    # 22b「三層檢查與重做上限」，由程式數
+per_object = 10             # 測試期間；原本 3
+per_pack_factor = 2         # 一包的物件重做總數 ≤ 物件數 × 2
+per_pack_min = 6
+pack_rounds = 3             # 一包的組裝檢查最多幾輪
+plate_redos = 30            # 整張立繪的物件重做總數
+plate_rounds = 3            # 整張立繪的組裝檢查（L6、L6b、L9、L11）最多幾輪
+same_way_fails = 2          # 同一個問題、同一種做法失敗兩次就不准再用
+step_redos = 3              # 一般步驟（L1、L2、L3、L7、L8 ...）重做幾次就停
+
+[checks]
+L0 = "選立繪"
+
+# ------------------------------------------------------------------ 修法選單（每一步從這裡挑 id）
+# kind：opens＝交給物件迴圈（objects 沒寫就是這一筆的物件）；split＝要再拆（new 寫拆出的新物件，各開一件小工作）；
+# stage：物件迴圈裡做完之後停在哪一小步（outline L5a、candidates L5b、place L5c）；images：做完要看的圖。
+
+[fix.rerun]
+cmd = "{same}"
+note = "同一個指令再跑一次（AI 每次畫的不一樣）"
+
+[fix.to_objects]
+kind = "opens"
+params = { objects = "layers?" }
+note = "交給物件迴圈；objects 沒寫就是這一筆的物件"
+
+[fix.reseed]
+cmd = "python Tools/art/see_through.py {hero} {series} --seed={seed}"
+params = { seed = "int" }
+note = "整張拆壞了，換種子重拆"
+
+[fix.make_face]
+cmd = "python Tools/art/object_fix.py {hero} {series} face --make-face"
+
+[fix.split_lr]
+cmd = "python Tools/art/object_fix.py {hero} {series} {part} --split-lr"
+params = { part = "layer" }
+
+[fix.drop_part]
+cmd = "python Tools/art/object_fix.py {hero} {series} {part} --drop-part"
+params = { part = "layer" }
+note = "拆層模型發明出來的層（翅膀、多一頂帽子）"
+
+[fix.sort_hair]
+cmd = "python Tools/art/object_fix.py {hero} {series} leftover --sort-hair"
+note = "雜物層裡的長髮移到 side_hair"
+
+[fix.move_hair]
+cmd = "python Tools/art/object_fix.py {hero} {series} {part} --move-hair --ycut={ycut} --palette={palette} {keep_holes}"
+params = { part = "layer", ycut = "int?", palette = "text?", keep_holes = "flag?" }
+note = "披在同色衣服上的髮尾從衣服移到側髮"
+
+[fix.weapon_points]
+cmd = "python Tools/art/rig_parts.py {hero} {series} --weapon={pts} --not={neg}"
+params = { pts = "points", neg = "points?" }
+note = "重切零件，武器照描點用 SAM2 切"
+
+[fix.specks]
+cmd = "python Tools/art/object_fix.py {hero} {series} {part} --drop-specks={n}"
+params = { part = "layer", n = "int" }
+
+[fix.rerig]
+cmd = "python Tools/art/inx_rig.py {hero} {series}"
+note = "改了綁定（例如 parts.json 的 ranges）之後重新綁定，再測一次"
+
+[fix.find_ranges]
+cmd = "? python Tools/art/rig_stress.py --find-ranges {hero}/{series}"
+note = "修不好的關節縮小轉動範圍（寫進 parts.json 的 ranges）"
+
+# 拆法（verdict: split）
+[fix.carve]
+kind = "split"
+cmd = "python Tools/art/object_fix.py {hero} {series} {part} --carve={new} --carve-rgb={rgb} --carve-box={box} --carve-poly={poly} {carve_front} {carve_copy}"
+params = { new = "name", rgb = "text?", box = "box?", poly = "text?", carve_front = "flag?", carve_copy = "flag?" }
+
+[fix.split_hair]
+kind = "split"
+cmd = "python Tools/art/object_fix.py {hero} {series} front_hair --split-hair"
+params = { new = "names" }
+note = "new 寫會拆出來的名字（side_lock-l、side_lock-r、hair_ends）"
+
+[fix.split_front]
+kind = "split"
+cmd = "python Tools/art/object_fix.py {hero} {series} {part} --split-front"
+params = { new = "names" }
+note = "穿過人物的物件拆前後兩層；new 寫 <名字>-front"
+
+# 物件迴圈：L5a 輪廓
+[fix.outline_marks]
+stage = "outline"
+cmd = "python Tools/art/outline.py {hero} {series} {part} --drop={drop} --erase-poly={poly} --erase-rgb={rgb} --line={line} --erase={erase} --src={src} {no_grow}"
+params = { drop = "ints?", poly = "text?", rgb = "text?", line = "text?", erase = "text?", src = "text?", no_grow = "flag?" }
+note = "標記存進 marks.json，重跑時自動套用"
+
+# 物件迴圈：L5b 出候選（AI 重畫用混合版：Qwen 快速 3 張先挑，三張都不行再 40 步）
+[fix.edit_fast]
+stage = "candidates"
+cmd = "python Tools/art/object_edit.py {hero} {series} {part} --engine=qwen --fast --instr={instr} --seeds={seeds} --mask={mask} --src={src} --pad={pad} --matte={matte} --extra={extra}"
+params = { instr = "text", seeds = "ints?", mask = "layers?", src = "text?", pad = "float?", matte = "text?", extra = "text?" }
+defaults = { seeds = "1,2,3" }
+images = ["st/gen/{part}_qf.jpg"]
+
+[fix.edit_slow]
+stage = "candidates"
+cmd = "python Tools/art/object_edit.py {hero} {series} {part} --engine=qwen --instr={instr} --seeds={seeds} --mask={mask} --src={src} --pad={pad} --matte={matte} --extra={extra}"
+params = { instr = "text", seeds = "ints?", mask = "layers?", src = "text?", pad = "float?", matte = "text?", extra = "text?" }
+defaults = { seeds = "1,2" }
+images = ["st/gen/{part}_q.jpg"]
+note = "40 步，約慢 10 倍；快速版三張都不行才用"
+
+[fix.fix_outline]
+stage = "candidates"
+cmd = "python Tools/art/object_fix.py {hero} {series} {part} --outline --seeds={seeds} --desc={desc}"
+params = { seeds = "ints?", desc = "text?" }
+images = ["st/fix/{part}.jpg"]
+note = "照輪廓線稿上色"
+
+[fix.fix_fill]
+stage = "candidates"
+cmd = "python Tools/art/object_fix.py {hero} {series} {part} --seeds={seeds} --grow={grow} --desc={desc} --only={box} --erase={erase} --denoise={denoise}"
+params = { seeds = "ints?", grow = "text?", desc = "text?", box = "box?", erase = "text?", denoise = "float?" }
+images = ["st/fix/{part}.jpg"]
+note = "補畫缺的範圍（--grow grey 重畫灰色糊塊）"
+
+[fix.mirror]
+stage = "candidates"
+cmd = "python Tools/art/object_fix.py {hero} {series} {part} --mirror --seeds={seeds}"
+params = { seeds = "ints?" }
+images = ["st/fix/{part}.jpg"]
+note = "成對的一邊拆壞了：拿另一邊翻過來（候選 0 是單純翻轉）"
+
+# 物件迴圈：直接改圖層，做完停在 L5c
+[fix.apply]
+stage = "place"
+cmd = "python Tools/art/object_fix.py {hero} {series} {part} --apply={seed}"
+params = { seed = "int" }
+note = "套用 st/fix/ 的候選（pick 寫 st/fix/<圖層>_<seed>.png）"
+
+[fix.place_plain]
+stage = "place"
+cmd = "python Tools/art/object_place.py {hero} {series} {pick} --as={part} --clear={clear}"
+params = { clear = "layers?" }
+note = "AI 畫的放在它自己畫的位置"
+
+[fix.place_fit]
+stage = "place"
+cmd = "python Tools/art/object_place.py {hero} {series} {pick} --as={part} --fit {wide} --clear={clear}"
+params = { wide = "flag?", clear = "layers?" }
+note = "跟原本的物件整體重疊對位；細長的東西容易歪"
+
+[fix.place_box]
+stage = "place"
+cmd = "python Tools/art/object_place.py {hero} {series} {pick} --as={part} --box={box} --clear={clear}"
+params = { box = "box", clear = "layers?" }
+note = "照看圖量出的框放"
+
+[fix.flat]
+stage = "place"
+cmd = "python Tools/art/object_fix.py {hero} {series} {part} --flat {nearest} --palette={palette} --from-view={view} --figure={figure}"
+params = { nearest = "flag?", palette = "text?", view = "text?", figure = "text?" }
+note = "輪廓裡猜錯的改成看得到的顏色（或取多角度圖的顏色）"
+
+[fix.drop_specks]
+stage = "place"
+cmd = "python Tools/art/object_fix.py {hero} {series} {part} --drop-specks={n}"
+params = { n = "int" }
+
+# ------------------------------------------------------------------ 步驟
+
+[[step]]
+id = "plate"
+check = "L0"
+gate = "human"              # 選哪一張立繪是使用者的決定
+cmd = 'python -c "import os, shutil, sys; [shutil.copy2(os.path.join(sys.argv[1], f), sys.argv[2]) for f in (\"full.png\", \"full_blink.png\") if os.path.exists(os.path.join(sys.argv[1], f)) and not os.path.exists(os.path.join(sys.argv[2], f))]" {plate_dir} {dir}'
+outputs = ["full.png"]
+images = ["full.png", "full_blink.png"]
+focus = ["這是使用者要做的那一張立繪嗎（主設計或哪一套造型）"]
+
+[[step]]
+id = "joints"
+check = "L1"
+after = ["plate"]
+cmd = "python Tools/art/live_layers.py parts {hero} {series}"
+inputs = ["full.png"]
+outputs = ["fig_joints.json", "fig_overview.png"]
+images = ["fig_overview.png"]
+focus = ["22b#L1", "改關節點用 manual：手改 fig_joints.json（原本的另存 fig_joints_detected.json）"]
+fix = ["rerun"]
+
+[[step]]
+id = "see_through"
+check = "L2"
+after = ["joints"]
+cmd = "python Tools/art/see_through.py {hero} {series} --seed={seed}"
+vars = { seed = 42 }
+inputs = ["full.png", "fig_joints.json"]
+outputs = ["st/part_*.png", "st/parts.json", "st/_stack_vs_plate.jpg"]
+images = ["st/_stack_vs_plate.jpg", "st/parts.json"]
+focus = ["22b#L2", "被擋住的地方猜錯的先記下來，用 to_objects 交給物件迴圈"]
+fix = ["reseed", "make_face", "split_lr", "drop_part", "sort_hair", "move_hair"]
+pass_fix = ["to_objects"]
+
+[[step]]
+id = "multiview"
+skip = "2026-10-02 混合版不跑：被擋住的部分交給 Qwen 直接畫（22c）；要跑時拿掉這一行"
+after = ["see_through"]
+cmd = "{mv_python} Tools/art/multiview.py {dir}/full.png {dir}/views --lora={hero}"
+outputs = ["views/views.jpg"]
+
+[[step]]
+id = "rig_parts"
+check = "L3"
+after = ["see_through"]
+cmd = "python Tools/art/rig_parts.py {hero} {series}"
+then = ["python Tools/art/split_groups.py {hero} {series}"]   # 先分一次包，才有 parts_4/5 可看
+inputs = ["full.png", "fig_joints.json"]
+outputs = ["st/parts.json", "st/groups/groups.json"]
+images = ["st/groups/parts_4.jpg", "st/groups/parts_5.jpg", "st/groups/parts_3.jpg"]
+focus = ["22b#L3", "鏡像、補灰色糊塊這類要挑候選的修法，用 to_objects 交給物件迴圈"]
+fix = ["weapon_points", "specks", "rerun", "to_objects"]
+pass_fix = ["to_objects"]
+
+[[step]]
+id = "split_groups"
+check = "L4"                # 主要關卡：每一格一筆結論
+after = ["rig_parts"]
+per_item = "object"
+items = "groups:parts"
+after_fix = "cmd"           # 拆完重新分包，再看一次
+cmd = "python Tools/art/split_groups.py {hero} {series}"
+inputs = ["st/parts.json", "st/part_*.png"]
+outputs = ["st/groups/groups.json", "st/groups/parts_*.jpg", "st/groups/assemble_*.jpg"]
+images = ["st/groups/parts_{1..6}.jpg", "st/groups/groups.json"]
+focus = ["22b#L4", "先問看得出來是什麼嗎；看不出來就不通過"]
+fix = ["to_objects", "carve", "split_hair", "split_front"]
+
+[[step]]
+id = "objects"
+kind = "each_object"        # 每個要修的物件一件小工作 objects/<名字>：L5a → L5b → L5c；全部通過後看組裝 L6
+after = ["split_groups"]
+check = "L6"
+per_item = "pack"
+items = "groups:packs"
+rounds = "pack"
+reopens = true
+# 由後往前補（22b）：身體、腿先，手臂、武器、頭髮後
+order = ["hidden", "bottomwear", "legwear", "thigh", "shin", "foot", "topwear", "chest", "abdomen", "belly", "cape",
+         "neck", "face", "ears", "eye", "irides", "eyelash", "eyebrow", "mouth", "nose", "upperarm", "forearm", "hand",
+         "sleeve", "objects", "held", "back_hair", "hair_ends", "side", "front_hair", "bangs", "headwear", "ribbon"]
+outputs = ["st/part_*.png", "st/parts.json", "st/outline/*", "st/fix/*", "st/gen/*", "st/_orig/*"]
+images = ["st/groups/assemble_{1..6}.jpg"]
+focus = ["22b#L6", "改前後順序用 manual（改 parts.json 的順序）"]
+fix = ["to_objects"]
+
+  [[step.stage]]
+  id = "outline"
+  check = "L5a"
+  cmd = "python Tools/art/outline.py {hero} {series} {part}"
+  images = ["st/outline/{part}.jpg"]
+  focus = ["22b#L5a", "通過時從 pass_menu 挑出候選的做法（被擋住的用 AI 重畫，四肢先試鏡像）"]
+  fix = ["outline_marks", "split_front", "carve"]
+  pass_fix = ["edit_fast", "edit_slow", "fix_outline", "fix_fill", "mirror", "flat", "drop_specks"]
+
+  [[step.stage]]
+  id = "candidates"
+  check = "L5b"
+  pick = true
+  focus = ["22b#L5b", "pick 寫挑中的那一張（st/gen/<圖層>_qf<種子>.png 或 st/fix/<圖層>_<種子>.png）；都不好就 redo"]
+  fix = ["edit_fast", "edit_slow", "fix_outline", "fix_fill", "mirror", "outline_marks", "carve", "split_front"]
+  pass_fix = ["place_box", "place_fit", "place_plain", "apply"]
+
+  [[step.stage]]
+  id = "place"
+  check = "L5c"
+  then = ["? python Tools/art/outline.py {hero} {series} {part} --check", "python Tools/art/split_groups.py {hero} {series}"]
+  images = ["st/groups/parts_{pack}.jpg", "st/groups/assemble_{pack}.jpg"]
+  focus = ["22b#L5c"]
+  fix = ["place_box", "place_fit", "place_plain", "apply", "flat", "drop_specks", "edit_fast", "edit_slow", "fix_fill",
+         "mirror", "outline_marks", "carve", "split_front"]
+
+[[step]]
+id = "mouths"
+check = "L7"
+after = ["see_through"]     # 排在物件迴圈後面；物件重開時不用重做
+cmd = "python Tools/art/live_layers.py mouths {hero} {series}"
+inputs = ["full.png"]
+outputs = ["mouth_closed.png", "mouth_a.png", "mouth_i.png", "mouth_o.png"]
+images = ["mouth_closed.png", "mouth_a.png", "mouth_i.png", "mouth_o.png"]
+focus = ["22b#L7"]
+fix = ["rerun"]
+
+[[step]]
+id = "inx_rig"
+after = ["objects", "mouths"]
+cmd = "python Tools/art/inx_rig.py {hero} {series}"
+inputs = ["st/part_*.png", "st/parts.json", "fig_joints.json", "mouth_*.png"]
+outputs = ["{name}_st.inx"]
+
+[[step]]
+id = "pack_motion"          # 第 4b 步：2026-10-02 漏做的那一步，寫死在流程裡
+check = "L6b"
+after = ["inx_rig"]
+per_item = "pack"
+items = "foreach:pack"
+foreach = [{ pack = "arms", phys = "nophys" }, { pack = "legs", phys = "nophys" }, { pack = "head", phys = "nophys" },
+           { pack = "body", phys = "nophys" }, { pack = "weapon", phys = "nophys" }, { pack = "held", phys = "nophys" },
+           { pack = "hair", phys = "" }]   # 頭髮包要打開擺動跑：看的是擺動本身
+cmd = "{godot} --audio-driver Dummy --path . res://Tests/live/motion_test.tscn -- {inx} {dir}/_packs pack={pack} {phys}"
+then = ["python Tools/art/motion_sheet.py {dir}/_packs --max=16"]
+after_fix = "cmd"
+inputs = ["{name}_st.inx"]
+images = ["_packs/sheet_pack_{pack}.jpg"]
+focus = ["22b#L6b", "零件後面的補畫層有沒有空洞"]
+rounds = "pack"             # 算進第二層（一包）的上限
+reopens = true
+fix = ["to_objects", "rerig"]
+
+[[step]]
+id = "shots"
+check = "L8"
+after = ["pack_motion"]
+cmd = ["? python Tools/art/rig_check.py {hero}/{series}",
+       "{godot} --audio-driver Dummy --path . res://Tests/live/puppet_preview.tscn -- {inx} {dir}/_shots"]
+inputs = ["{name}_st.inx"]
+outputs = ["_shots/000_rest.png"]
+images = ["_shots/000_rest.png", "_shots/030_yaw_right.png", "_shots/060_yaw_left_blink.png", "_shots/090_mouth_open.png",
+          "_shots/150_settled.png", "{checkdir}/{name}_check.jpg"]
+focus = ["22b#L8", "check/<名稱>_check.jpg 跟原圖的比對只當參考"]
+reopens = true
+fix = ["to_objects", "rerig"]
+
+[[step]]
+id = "motions"
+check = "L9"
+after = ["shots"]
+per_item = "motion"
+items = ["walk", "jump", "run", "wave", "head", "face", "idle", "hair", "hit", "glance"]
+cmd = ["{godot} --audio-driver Dummy --path . res://Tests/live/motion_test.tscn -- {inx} {dir}/_motions_nophys bare nophys",
+       "{godot} --audio-driver Dummy --path . res://Tests/live/motion_test.tscn -- {inx} {dir}/_motions_phys bare"]
+then = ["python Tools/art/motion_sheet.py {dir}/_motions_nophys", "python Tools/art/motion_sheet.py {dir}/_motions_phys"]
+after_fix = "cmd"
+inputs = ["{name}_st.inx"]
+outputs = ["_motions_nophys/report.json", "_motions_phys/report.json"]
+images = ["_motions_nophys/sheet_*.jpg", "_motions_phys/sheet_*.jpg", "_motions_nophys/report.json"]
+focus = ["22b#L9", "先看關掉擺動（_motions_nophys），再看打開擺動（_motions_phys）"]
+rounds = "plate"
+reopens = true
+fix = ["to_objects", "rerig"]
+
+[[step]]
+id = "stress"
+check = "L12"
+after = ["motions"]
+cmd = "? python Tools/art/rig_stress.py {hero}/{series}"
+after_fix = "cmd"
+inputs = ["{name}_st.inx"]
+images = ["{checkdir}/{name}_stress.jpg"]
+focus = ["22b#L12"]
+reopens = true
+fix = ["to_objects", "find_ranges", "rerig"]
+
+[[step]]
+id = "objects_check"
+check = "L10"
+after = ["motions"]          # 人物先通過，武器和物件再單獨驗
+cmd = "? python Tools/art/object_check.py {hero} {series}"
+after_fix = "cmd"
+inputs = ["st/groups/groups.json"]
+outputs = ["st/groups/objects/objects.json"]
+images = ["st/groups/objects/objects_check.jpg", "st/groups/objects/objects.json"]
+focus = ["22b#L10"]
+reopens = true
+fix = ["to_objects"]
+
+[[step]]
+id = "integrate"
+check = "L11"
+after = ["motions", "objects_check"]   # 6、7 都通過才能做
+cmd = "{godot} --audio-driver Dummy --path . res://Tests/live/motion_test.tscn -- {inx} {dir}/_motions_all"
+then = ["python Tools/art/motion_sheet.py {dir}/_motions_all"]
+after_fix = "cmd"
+inputs = ["{name}_st.inx"]
+outputs = ["_motions_all/report.json"]
+images = ["_motions_all/sheet_*.jpg"]
+focus = ["22b#L11"]
+rounds = "plate"
+reopens = true
+fix = ["to_objects", "rerig"]
+
+[[step]]
+id = "handover"
+check = "L14"
+gate = "human"              # 交付一定給使用者看
+after = ["integrate", "stress"]
+images = ["st/groups/parts_{1..6}.jpg", "st/groups/assemble_6.jpg", "_motions_all/sheet.jpg", "llm_checks.md"]
+focus = ["22b#L14", "run.json 的 manual 是選單外的手動修法：列成「要做成工具」的清單", "wf status 看每個物件重做幾次"]

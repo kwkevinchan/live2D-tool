@@ -1,0 +1,157 @@
+# A small flow for the wf tests: the same shapes as flows/plate.toml (a human gate, a plain checkpoint with fixes,
+# a per-object checkpoint, the object loop with its three stages, a step without a checkpoint, a per-pack check that
+# reopens objects, the handover), every command a stub writing files (Tools/wf/tests/stub.py).
+
+[flow]
+name = "fake"
+work = "{live}/{hero}/{series}"
+estimate_min = 60
+docs = { fake = "Tools/wf/tests/fake_doc.md" }
+
+[flow.vars]
+stub = "Tools/wf/tests/stub.py"
+
+[limits]
+per_object = 3
+per_pack_factor = 2
+per_pack_min = 4
+pack_rounds = 2
+plate_redos = 8
+plate_rounds = 3
+same_way_fails = 2
+step_redos = 3
+
+[checks]
+L0 = "選立繪"
+
+[fix.reseed]
+cmd = "python {stub} {dir} write split.txt=seed{seed}"
+params = { seed = "int" }
+
+[fix.to_objects]
+kind = "opens"
+params = { objects = "layers?" }
+note = "交給物件迴圈"
+
+[fix.carve]
+kind = "split"
+cmd = "python {stub} {dir} layer {new}"
+params = { new = "names", box = "box?" }
+
+[fix.marks]
+stage = "outline"
+cmd = "python {stub} {dir} write st/outline/{part}.jpg=marks{drop}"
+params = { drop = "ints?" }
+
+[fix.redraw]
+stage = "candidates"
+cmd = "python {stub} {dir} write st/gen/{part}_qf.jpg st/gen/{part}_qf1.png"
+images = ["st/gen/{part}_qf.jpg"]
+params = { instr = "text", seeds = "ints?" }
+
+[fix.redraw_slow]
+stage = "candidates"
+cmd = "python {stub} {dir} write st/gen/{part}_q.jpg st/gen/{part}_q1.png"
+images = ["st/gen/{part}_q.jpg"]
+params = { instr = "text" }
+
+[fix.place_box]
+stage = "place"
+cmd = "python {stub} {dir} write st/part_{part}.png=placed{box}"
+params = { box = "box" }
+
+[[step]]
+id = "plate"
+check = "L0"
+gate = "human"
+cmd = "python {stub} {dir} write full.png=plate"
+outputs = ["full.png"]
+images = ["full.png"]
+
+[[step]]
+id = "split"
+check = "L2"
+after = ["plate"]
+cmd = "python {stub} {dir} write split.txt=seed42 st/part_hair.png=hair"
+inputs = ["full.png"]
+outputs = ["split.txt"]
+images = ["split.txt"]
+focus = ["fake#L2", "this step's own point"]
+fix = ["reseed"]
+pass_fix = ["to_objects"]
+
+[[step]]
+id = "groups"
+check = "L4"
+after = ["split"]
+per_item = "object"
+items = "groups:parts"
+after_fix = "cmd"
+cmd = "python {stub} {dir} groups face:face,eye hair:hair"
+inputs = ["split.txt", "st/part_*.png"]
+outputs = ["st/groups/groups.json"]
+images = ["st/groups/groups.json"]
+fix = ["to_objects", "carve"]
+
+[[step]]
+id = "objects"
+kind = "each_object"
+after = ["groups"]
+check = "L6"
+per_item = "pack"
+items = "groups:packs"
+rounds = "pack"
+order = ["hair", "eye"]
+outputs = ["st/part_*.png", "st/outline/*", "st/gen/*", "st/groups/*"]
+images = ["st/groups/groups.json"]
+fix = ["to_objects"]
+
+  [[step.stage]]
+  id = "outline"
+  check = "L5a"
+  cmd = "python {stub} {dir} write st/outline/{part}.jpg"
+  images = ["st/outline/{part}.jpg"]
+  fix = ["marks"]
+  pass_fix = ["redraw", "redraw_slow"]
+
+  [[step.stage]]
+  id = "candidates"
+  check = "L5b"
+  pick = true
+  fix = ["redraw", "redraw_slow", "marks"]
+  pass_fix = ["place_box"]
+
+  [[step.stage]]
+  id = "place"
+  check = "L5c"
+  then = ["? python {stub} {dir} fail", "python {stub} {dir} groups face:face,eye hair:hair"]
+  images = ["st/groups/groups.json", "st/part_{part}.png"]
+  fix = ["place_box", "redraw", "redraw_slow"]
+
+[[step]]
+id = "rig"
+after = ["objects"]
+cmd = "python {stub} {dir} write model.inx"
+inputs = ["split.txt", "st/part_*.png"]
+outputs = ["model.inx"]
+
+[[step]]
+id = "motion"
+check = "L6b"
+after = ["rig"]
+per_item = "pack"
+items = "foreach:pack"
+foreach = [{ pack = "arms", phys = "nophys" }, { pack = "hair", phys = "" }]
+cmd = "python {stub} {dir} write _packs/sheet_pack_{pack}.jpg _packs/{pack}_{phys}.txt"
+inputs = ["model.inx"]
+images = ["_packs/sheet_pack_{pack}.jpg"]
+rounds = "pack"
+reopens = true
+fix = ["to_objects"]
+
+[[step]]
+id = "handover"
+check = "L14"
+gate = "human"
+after = ["motion"]
+images = ["_packs/*.jpg"]

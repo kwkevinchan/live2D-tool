@@ -13,6 +13,7 @@
 | [07_Player.md](07_Player.md) | Godot 播放器：讀 `.inx`、每格計算、物理、畫出來；會動的立繪（`inochi_puppet.gd`、`live_portrait.gd`） |
 | [08_Studio.md](08_Studio.md) | 工作室網頁（`Tools/live2d_studio/app.py`） |
 | [09_Files.md](09_Files.md) | 工作資料夾裡每個檔案的格式、圖層的名字 |
+| [10_Workflow.md](10_Workflow.md) | 流程程式：照 `flows/plate.toml` 跑一張立繪、審查包、上限和保險（`Tools/wf/`） |
 
 ---
 
@@ -39,7 +40,7 @@
 
 每一步做完由 LLM 看檢查圖、寫下結論，通過才往下（檢查點的內容見 `Docs/Design/22b_Live2D_Flow.md`「LLM 檢查點」）。結論記在工作資料夾的 `llm_checks.md`。
 
-工作室網頁（[08_Studio.md](08_Studio.md)）把上面每一步排成按鈕，背後執行的就是這些指令。
+工作室網頁（[08_Studio.md](08_Studio.md)）把上面每一步排成按鈕，背後執行的就是這些指令。流程程式（[10_Workflow.md](10_Workflow.md)）把整條流程寫成設定檔 `flows/plate.toml`，由程式照順序執行這些指令，每個檢查點寫一個審查包等結論，`llm_checks.md` 也由它寫。
 
 ```
 立繪 full.png
