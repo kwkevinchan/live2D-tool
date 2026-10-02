@@ -185,8 +185,8 @@ params = { n = "int" }
 
 [fix.cap]
 stage = "place"
-cmd = "python Tools/art/object_fix.py {hero} {series} {part} --cap"
-note = "四肢零件在骨頭兩端補一塊圓，關節彎的時候不裂開（鏡像的會自己補）"
+cmd = "python Tools/art/object_fix.py {hero} {series} {part} --round"
+note = "四肢零件和相接的零件在關節都收成同一個圓心、同一個半徑的半圓（轉軸移到圓心），關節彎的時候不裂、不出現段差"
 
 # ------------------------------------------------------------------ 步驟
 
