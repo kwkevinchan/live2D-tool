@@ -1,6 +1,9 @@
 # 一張立繪的流程（Docs/Design/22b_Live2D_Flow.md 甲），由流程程式 wf 照著跑（Docs/Design/23_Workflow.md、
 # Docs/Code/10_Workflow.md）。沒寫在這裡的步驟不會被做，寫了的不會被跳過；要跳過只能標 skip = "原因"。
 #
+# 目前只做人物（使用者 2026-10-02）：character_only 把武器、手上的東西拿掉（原檔留在 st/_orig/），武器包、
+# 手上物件包的部件測試不跑，L10 物件驗證、L11 整合跳過。帽子、髮飾算人物。要做物件時拿掉這些。
+#
 # 代入的值：{hero} {series} {dir}（工作資料夾）{live} {name}（<hero>_default 或 <hero>_<series>）{godot}
 # {plate_dir} {mv_python}，[flow.vars]，步驟的 vars、foreach 的一列、結論的 params。
 # 一個片段的值是空的，整個片段拿掉：選填的旗標寫成一個片段 --weapon={pts}。
@@ -257,13 +260,21 @@ cmd = "python Tools/art/split_groups.py {hero} {series}"
 inputs = ["st/parts.json", "st/part_*.png"]
 outputs = ["st/groups/groups.json", "st/groups/parts_*.jpg", "st/groups/assemble_*.jpg"]
 images = ["st/groups/parts_{1..6}.jpg", "st/groups/groups.json"]
-focus = ["22b#L4", "先問看得出來是什麼嗎；看不出來就不通過"]
+focus = ["22b#L4", "先問看得出來是什麼嗎；看不出來就不通過",
+         "目前只做人物（使用者 2026-10-02）：武器、手上拿的東西（火球等）不送進物件迴圈；散在別的層裡的手上物件用 carve 切成 held-<l|r>，下一步整層拿掉。帽子、髮飾算人物"]
 fix = ["to_objects", "carve", "split_hair", "split_front"]
+
+[[step]]
+id = "character_only"       # 目前只做人物（使用者 2026-10-02）：武器、手上的東西拿掉，原檔留在 st/_orig/
+after = ["split_groups"]
+cmd = "python Tools/art/object_fix.py {hero} {series} - --drop-objects"
+then = ["python Tools/art/split_groups.py {hero} {series}"]
+inputs = ["st/parts.json"]
 
 [[step]]
 id = "objects"
 kind = "each_object"        # 每個要修的物件一件小工作 objects/<名字>：L5a → L5b → L5c；全部通過後看組裝 L6
-after = ["split_groups"]
+after = ["character_only"]
 check = "L6"
 per_item = "pack"
 items = "groups:packs"
@@ -331,8 +342,8 @@ after = ["inx_rig"]
 per_item = "pack"
 items = "foreach:pack"
 foreach = [{ pack = "arms", phys = "nophys" }, { pack = "legs", phys = "nophys" }, { pack = "head", phys = "nophys" },
-           { pack = "body", phys = "nophys" }, { pack = "weapon", phys = "nophys" }, { pack = "held", phys = "nophys" },
-           { pack = "hair", phys = "" }]   # 頭髮包要打開擺動跑：看的是擺動本身
+           { pack = "body", phys = "nophys" }, { pack = "hair", phys = "" }]   # 頭髮包要打開擺動跑：看的是擺動本身
+# 武器包、手上物件包先不跑（只做人物）：要做時加回 { pack = "weapon", phys = "nophys" }、{ pack = "held", phys = "nophys" }
 cmd = "{godot} --audio-driver Dummy --path . res://Tests/live/motion_test.tscn -- {inx} {dir}/_packs pack={pack} {phys}"
 then = ["python Tools/art/motion_sheet.py {dir}/_packs --max=16"]
 after_fix = "cmd"
@@ -391,6 +402,7 @@ fix = ["to_objects", "find_ranges", "rerig"]
 
 [[step]]
 id = "objects_check"
+skip = "目前只做人物（使用者 2026-10-02）：武器和手上的東西拿掉了；要做時拿掉這一行，character_only 也一起拿掉"
 check = "L10"
 after = ["motions"]          # 人物先通過，武器和物件再單獨驗
 cmd = "? python Tools/art/object_check.py {hero} {series}"
@@ -404,6 +416,7 @@ fix = ["to_objects"]
 
 [[step]]
 id = "integrate"
+skip = "目前只做人物（使用者 2026-10-02）：人物和物件的整合先不做；要做時拿掉這一行"
 check = "L11"
 after = ["motions", "objects_check"]   # 6、7 都通過才能做
 cmd = "{godot} --audio-driver Dummy --path . res://Tests/live/motion_test.tscn -- {inx} {dir}/_motions_all"
@@ -423,5 +436,5 @@ id = "handover"
 check = "L14"
 gate = "human"              # 交付一定給使用者看
 after = ["integrate", "stress"]
-images = ["st/groups/parts_{1..6}.jpg", "st/groups/assemble_6.jpg", "_motions_all/sheet.jpg", "llm_checks.md"]
+images = ["st/groups/parts_{1..6}.jpg", "st/groups/assemble_6.jpg", "_motions_phys/sheet.jpg", "llm_checks.md"]   # 只做人物：整合（_motions_all）跳過
 focus = ["22b#L14", "run.json 的 manual 是選單外的手動修法：列成「要做成工具」的清單", "wf status 看每個物件重做幾次"]

@@ -75,6 +75,8 @@ main(argv)                                        cli.py
 
 ## 3. 設定檔 `flows/plate.toml`
 
+目前只做人物（2026-10-02）：`character_only` 一步（`object_fix --drop-objects`，分包之後、物件迴圈之前）拿掉武器和手上的東西；`objects_check`、`integrate` 標 `skip`；部件測試只跑手臂、腿、頭、身體、頭髮五包；交付看 `_motions_phys`。
+
 ```toml
 [flow]
 name = "plate"

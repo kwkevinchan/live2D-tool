@@ -509,6 +509,17 @@ def face_ops(a, ld, st, meta):
         shutil.copy(pjp, os.path.join(orig, "parts.json"))
     joints = load_joints(os.path.join(ld, "fig_joints.json"))
     cx, cy, fh = joints["face"]
+    if a.drop_objects:   # the character only (the user, 2026-10-02): weapons and things held go, kept in st/_orig/
+        gone = [q["name"] for q in order if P.pack_of(q["name"]) == "weapon" or q["name"].startswith("held-")]
+        for n in gone:
+            path = os.path.join(st, "part_%s.png" % n)
+            if os.path.exists(path):
+                shutil.copy(path, os.path.join(orig, "part_%s.png" % n))
+                os.remove(path)
+        meta["order_back_to_front"] = [q for q in order if q["name"] not in gone]
+        json.dump(meta, open(pjp, "w"))
+        print("not the character, dropped (kept in st/_orig/): %s" % (", ".join(gone) or "none"), flush=True)
+        return 0
     if a.drop_part:
         path = os.path.join(st, "part_%s.png" % a.part)
         if os.path.exists(path):
@@ -1017,6 +1028,9 @@ def main():
                          "(fig_joints.json face), holes for the eyes and mouth closed; listed before the eyes")
     ap.add_argument("--split-lr", action="store_true",
                     help="one layer for both sides (eyewhite): <part>-l / <part>-r, cut at the face's middle")
+    ap.add_argument("--drop-objects", action="store_true", help="the character only: every weapon layer and thing "
+                                                                "held (held-*) out of parts.json (kept in st/_orig/); "
+                                                                "the part argument is ignored")
     ap.add_argument("--drop-part", action="store_true", help="take an invented layer out of parts.json (kept in st/_orig/)")
     ap.add_argument("--mirror", action="store_true", help="start from the other side's piece, flipped onto this bone")
     ap.add_argument("--defringe", action="store_true", help="in place: pieces apart from the main one and the ragged "
@@ -1047,7 +1061,7 @@ def main():
         for k, v in load_joints(os.path.join(ld, "fig_joints.json")).items():
             if isinstance(v, list) and k not in pv:
                 pv[k] = v
-    if a.make_face or a.split_lr or a.drop_part:   # these work on parts.json, the part may not exist yet
+    if a.make_face or a.split_lr or a.drop_part or a.drop_objects:   # these work on parts.json, the part may not exist yet
         return face_ops(a, ld, st, meta)
     if a.carve or a.split_hair:
         return carve_ops(a, ld, st, meta)
