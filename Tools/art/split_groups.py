@@ -34,7 +34,6 @@ PAIRS = P.pairs()   # left / right pairs: both must be there, a hidden one paint
 PAIR_AREA = 2.0       # left / right parts this many times apart in size, or
 PAIR_COLOR = 45       # this far apart in mean colour (sum of RGB), are not a matching pair
 TILE = 220
-COLOR_OFF = 90       # sum of RGB differences that counts as a wrong colour (as rig_check)
 
 
 def pack_of(name):
@@ -161,17 +160,12 @@ def main(hero, series):
         both.paste(view, (0, 0))
         both.paste(side, (plate.width, 0))
         text = "%d. + %s: covers %.0f%% of the figure" % (k, key, 100 * cover)
-        if k == len(PACKS):   # everything: judged against the plate
-            wrong = fig & have & (np.abs(stack[..., :3].astype(int) - pa[..., :3].astype(int)).sum(-1) > COLOR_OFF)
+        if k == len(PACKS):   # everything: only what the figure leaves uncovered (a hole), no colour against the plate
+            # (the user, 2026-10-02: the parts need only be right and close in style; painting the differences from the
+            # plate on the sheet read as "make it match the plate")
             missing = fig & ~have
-            share = float((wrong | missing).sum()) / max(1, fig.sum())
-            entry.update({"wrong": int(wrong.sum()), "missing": int(missing.sum()), "bad_share": round(share, 4)})
-            v = np.asarray(both).copy()
-            v[:, :plate.width][missing] = (40, 90, 255, 255)
-            v[:, :plate.width][wrong] = (255, 40, 40, 255)
-            both = Image.fromarray(v)
-            # for reference only: the plate is material, whole parts matter more than matching it pixel for pixel
-            text = "all packs, for reference vs the plate: %.2f%% differs (missing %d blue, other colour %d red)" % (100 * share, missing.sum(), wrong.sum())
+            entry.update({"missing": int(missing.sum()), "missing_share": round(float(missing.sum()) / max(1, fig.sum()), 4)})
+            text = "all packs: covers %.0f%% of the figure" % (100 * cover)
         label(both, text)
         both.convert("RGB").resize((both.width // 2, both.height // 2)).save(os.path.join(out, "assemble_%d.jpg" % k), quality=86)
         report["packs"].append(entry)
@@ -180,7 +174,7 @@ def main(hero, series):
                                                                      ("  " + "; ".join(warns)) if warns else ""), flush=True)
     json.dump(report, open(os.path.join(out, "groups.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     last = report["packs"][-1]
-    print("all packs vs the plate: %.2f%% differs; %d warnings -> %s" % (100 * last["bad_share"], len(report["warnings"]), out), flush=True)
+    print("all packs: %.2f%% of the figure uncovered; %d warnings -> %s" % (100 * last["missing_share"], len(report["warnings"]), out), flush=True)
     return 0
 
 

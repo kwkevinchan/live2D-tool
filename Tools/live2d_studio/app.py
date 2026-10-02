@@ -240,7 +240,7 @@ def folder_view(hero, series):
     c = check_results().get(check_name(hero, series))
     try:
         g = json.load(open(os.path.join(gd, "groups.json"), encoding="utf-8"))
-        gtxt = "全部組起來跟原圖差 %.2f%%%s" % (100 * g["packs"][-1].get("bad_share", 0),
+        gtxt = "全部組起來有 %.2f%% 的人物沒蓋到%s" % (100 * g["packs"][-1].get("missing_share", 0),
                                           "；" + "；".join(g["warnings"]) if g["warnings"] else "，部件沒有發現問題")
     except (OSError, ValueError, KeyError, IndexError):
         gtxt = "還沒做"
