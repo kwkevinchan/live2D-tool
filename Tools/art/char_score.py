@@ -478,7 +478,8 @@ def cmd_flag_packs(args):
     of the hero's other splits; the first split of a character has no references and is skipped"""
     test = packs_of(load_parts(args.hero, args.series))
     others = [os.path.basename(os.path.dirname(os.path.dirname(d))) for d in glob.glob(os.path.join(WORK, "live", args.hero, "*", "st", "parts.json"))]
-    rpacks = [packs_of(load_parts(args.hero, r)) for r in sorted(others) if r != args.series]
+    # not itself, nor its own copies (<series>_hand_<date>, <series>_moved_<date>: the same picture)
+    rpacks = [packs_of(load_parts(args.hero, r)) for r in sorted(others) if r != args.series and not r.startswith(args.series + "_")]
     rows = []
     for n in args.packs:
         ref = [d[n] for d in rpacks if n in d]
