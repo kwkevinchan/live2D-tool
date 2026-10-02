@@ -140,14 +140,35 @@ def bone(part, pv):
     return (a, b) if b else None
 
 
+def face_middle(st):
+    """x of the face's middle: halfway between the eyes (eyewhite, else irides), or None"""
+    for k in ("eyewhite", "irides"):
+        xs = []
+        for s in ("l", "r"):
+            p = os.path.join(st, "part_%s-%s.png" % (k, s))
+            if os.path.exists(p):
+                on = np.asarray(Image.open(p).convert("RGBA"))[..., 3] > 128
+                if on.sum() > 30:
+                    xs.append(np.nonzero(on)[1].mean())
+        if len(xs) == 2:
+            return (xs[0] + xs[1]) / 2
+    return None
+
+
 def mirrored(part, st, pv, size):
     """the other side's piece flipped and laid on this side's bone (turned and scaled so its bone lands on this
     one): the base for a side the plate hides or botched (22b: a missing side is drawn from the other)"""
     other = part[:-1] + ("l" if part[-1] == "r" else "r")
     src = Image.open(os.path.join(st, "part_%s.png" % other)).convert("RGBA")
     b_src, b_dst = bone(other, pv), bone(part, pv)
-    if not (b_src and b_dst):
-        raise SystemExit("no bone for %s / %s in parts.json pivots" % (part, other))
+    if not (b_src and b_dst):   # an ear, an eyebrow: no bone, flipped over the face's middle (between the eyes)
+        mid = face_middle(st)
+        if mid is None:
+            raise SystemExit("no bone for %s / %s in parts.json pivots, and no eyes to find the face's middle" % (part, other))
+        out = Image.new("RGBA", size, (0, 0, 0, 0))
+        out.alpha_composite(src.transpose(Image.FLIP_LEFT_RIGHT), (int(round(2 * mid - (src.width - 1))), 0))
+        print("mirrored %s onto %s over the face's middle x=%.0f" % (other, part, mid), flush=True)
+        return np.asarray(out).copy()
     W = src.width
     src = src.transpose(Image.FLIP_LEFT_RIGHT)
     p0, p1 = (np.array([W - 1 - q[0], q[1]], float) for q in b_src)   # the flipped bone
