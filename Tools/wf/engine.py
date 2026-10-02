@@ -328,6 +328,11 @@ class Run:
 
     def work_object(self, step, key):
         o = self.job(key)
+        if not os.path.exists(os.path.join(self.dir, "st", "part_%s.png" % key.split("/", 1)[1])):
+            o.update(status="passed", frozen=True, queue=[], gone=True)   # dropped since it was opened (character_only)
+            self.note("%s 跳過：圖層已經不在（被拿掉了）" % key)
+            self.save()
+            return
         st = self.stage(step, o.get("stage"))
         o.update(status="running", hints=[], stage=st["id"])
         self.save()
@@ -361,6 +366,9 @@ class Run:
                          reopened=o.get("reopened", 0) + 1)
                 self.note("%s 重開：%s" % (key, why))
             return o["status"] != "passed"
+        if not os.path.exists(os.path.join(self.dir, "st", "part_%s.png" % name)):   # a pack's name for a piece of
+            self.note("%s 不開：沒有這個圖層（%s）" % (key, why))                    # another layer (leftover-head)
+            return False
         self.s["steps"][key] = {"status": "pending", "attempts": 0, "redos": 0, "tries": [], "fails": {}, "banned": [],
                                 "fresh": True, "opened": now(), "why": why}
         self.note("%s 進物件迴圈：%s" % (key, why))
