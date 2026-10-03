@@ -624,12 +624,15 @@ def rig_st(hero, series, out=None):
     face = add("Face", part_img("face"), 0.1)
     head_kids = [hp(back_hair), hp(face)]
     feats = []
+    mouth_closed = None
     for n, z in (("ears-l", 0.15), ("ears-r", 0.15), ("ears", 0.15), ("nose", 0.05), ("mouth", 0.04)):
         if have(n):
             pt = add(n.capitalize(), part_img(n), z)
             head_kids.append(hp(pt))
             if n in ("nose", "mouth"):
                 feats.append(pt)
+            if n == "mouth":
+                mouth_closed = pt
     eyes = {}
     for side in ("l", "r"):
         if not have("eyewhite-%s" % side):
@@ -1062,8 +1065,17 @@ def rig_st(hero, series, out=None):
                 bnd["values"] = [v[0], [v[0][0] * 0.2 + v[1][0] * 0.8], v[1]]
             bnd["isSet"] = [[True]] * 3
         blink_p["bindings"].append(value_binding(closed.uuid, "opacity", [0.0, 0.0, 1.0]))
+        # and the open eye fades out as it comes in: a closed eye drawn as a line (no patch of skin behind it) would
+        # show the squashed eye white, iris and lashes under it
+        for white, iris, lash, _brow, _comp in eyes.values():
+            for pt in (white, iris, lash):
+                if pt is not None:
+                    blink_p["bindings"].append(value_binding(pt.uuid, "opacity", [1.0, 1.0, 0.0]))
     if mouth_open is not None:
-        params.append(param("Mouth:: Open", [0.0, 1.0], 0.0, 1.0, [value_binding(mouth_open.uuid, "opacity", [0.0, 1.0])]))
+        open_b = [value_binding(mouth_open.uuid, "opacity", [0.0, 1.0])]
+        if mouth_closed is not None:   # the closed mouth line goes as the open one comes (an open mouth drawn without skin around it)
+            open_b.append(value_binding(mouth_closed.uuid, "opacity", [1.0, 0.0]))
+        params.append(param("Mouth:: Open", [0.0, 1.0], 0.0, 1.0, open_b))
     for pid, pt, amount in ((phys_back, back_hair, 0.3), (phys_front, front_hair, 0.12)):
         top_y, bot_y = pt.box[1], pt.box[3]
         sway = []
