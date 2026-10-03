@@ -56,7 +56,6 @@ python Tools/art/live_layers.py joints <角色> <造型>    畫 fig_joints.jpg�
 
 ## 已知問題
 
-- 偵測器在放大的立繪上更差（[22e](../Design/22e_Upscale.md)）。
 - 想做成工具：同一張立繪重跑時沿用上一輪確認過的點；或試別的骨架偵測器。
 
 ## 相關
