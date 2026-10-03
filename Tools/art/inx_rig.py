@@ -39,6 +39,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 import config as _C   # live2d.toml
 WORK = _C.WORK
 CELL = 48          # mesh grid size in pixels
+EYE_CELL = 3       # the eye's pieces (eye white, iris, lashes): fine enough for the lid to bend as it closes
 YAW_PX = 14        # how far the head moves at full yaw
 PITCH_PX = 8       # how far the head drops at a full nod
 ROLL = 0.2         # head tilt at the neck (radians)
@@ -84,7 +85,7 @@ def node(name, children=None, x=0.0, y=0.0, zsort=0.0, kind="Node"):
 class Part:
     """a textured part cut from a full-size RGBA layer: its own cropped texture and a grid mesh over its pixels"""
 
-    def __init__(self, name, rgba, tex_index, zsort, center, opacity=1.0):
+    def __init__(self, name, rgba, tex_index, zsort, center, opacity=1.0, cell=None):
         a = np.asarray(rgba)[..., 3]
         ys, xs = np.nonzero(a > 8)
         if len(xs) == 0:
@@ -97,7 +98,7 @@ class Part:
         w, h = self.image.size
         cx, cy = x0 + w / 2.0, y0 + h / 2.0          # part centre in full.png pixels
         self.pos = (cx - center[0], cy - center[1])  # in puppet space
-        self.verts, self.uvs, self.indices = grid_mesh(np.asarray(self.image)[..., 3], w, h)
+        self.verts, self.uvs, self.indices = grid_mesh(np.asarray(self.image)[..., 3], w, h, cell or CELL)
         self.uuid = uid()
         self.blend = "Normal"
         self.zsort = zsort
@@ -119,9 +120,9 @@ class Part:
                 "mask_threshold": 0.5, "masks": [], "opacity": float(self.opacity), "psdLayerPath": ""}
 
 
-def grid_mesh(alpha, w, h):
+def grid_mesh(alpha, w, h, cell=CELL):
     """a grid over the part: cells that contain pixels, vertices shared, two triangles per cell; verts centred"""
-    nx, ny = max(1, int(np.ceil(w / CELL))), max(1, int(np.ceil(h / CELL)))
+    nx, ny = max(1, int(np.ceil(w / cell))), max(1, int(np.ceil(h / cell)))
     xs = np.linspace(0, w, nx + 1)
     ys = np.linspace(0, h, ny + 1)
     index = {}
@@ -145,6 +146,19 @@ def grid_mesh(alpha, w, h):
 def value_binding(target_uuid, key, values):
     return {"node": target_uuid, "param_name": key, "values": [[v] for v in values],
             "isSet": [[True] for _ in values], "interpolate_mode": "Linear"}
+
+
+def eye_edges(mask):
+    """the eye white's top and bottom edge as two smooth curves (a parabola each, fitted to the rows of its columns):
+    functions of x in full.png pixels, held flat past the corners. Row by row the edges are a pixel or two
+    uneven, and a lid that follows them comes down jagged"""
+    has = mask.any(0)
+    cols = np.nonzero(has)[0]
+    top = np.polyfit(cols, mask[:, cols].argmax(0), 2)
+    bot = np.polyfit(cols, mask.shape[0] - 1 - mask[::-1, cols].argmax(0), 2)
+    x0, x1 = cols.min(), cols.max()
+    at = lambda c: (lambda x: float(np.polyval(c, np.clip(x, x0, x1))))
+    return at(top), at(bot)
 
 
 def deform_binding(part, offsets_per_point):
@@ -593,8 +607,8 @@ def rig_st(hero, series, out=None):
         return ok
     images = []
 
-    def add(name, rgba, zsort, opacity=1.0, blend="Normal"):
-        pt = Part(name, rgba, len(images), zsort, center, opacity)
+    def add(name, rgba, zsort, opacity=1.0, blend="Normal", cell=None):
+        pt = Part(name, rgba, len(images), zsort, center, opacity, cell)
         pt.blend = blend
         images.append(pt.image)
         return pt
@@ -633,12 +647,12 @@ def rig_st(hero, series, out=None):
                 feats.append(pt)
             if n == "mouth":
                 mouth_closed = pt
-    eyes = {}
+    eyes, lids = {}, {}
     for side in ("l", "r"):
         if not have("eyewhite-%s" % side):
             continue
         white_img = part_img("eyewhite-%s" % side)
-        white = add("Eye White %s" % side.upper(), white_img, 0.02)
+        white = add("Eye White %s" % side.upper(), white_img, 0.02, cell=EYE_CELL)
         if have("irides-%s" % side):
             iris_img = part_img("irides-%s" % side)
         elif have("irides"):   # one part for both irises (side views): take the part inside this eye white
@@ -653,18 +667,19 @@ def rig_st(hero, series, out=None):
         kids = [hp(white)]
         iris = None
         if iris_img is not None:
-            iris = add("Iris %s" % side.upper(), iris_img, -0.01, blend="ClipToLower")
+            iris = add("Iris %s" % side.upper(), iris_img, -0.01, blend="ClipToLower", cell=EYE_CELL)
             kids.append(hp(iris))
         comp = composite("Eye %s" % side.upper(), kids, zsort=0.03)
         head_kids.append(comp)
         lash = brow = None
         if have("eyelash-%s" % side):
-            lash = add("Eyelash %s" % side.upper(), part_img("eyelash-%s" % side), 0.0)
+            lash = add("Eyelash %s" % side.upper(), part_img("eyelash-%s" % side), 0.0, cell=EYE_CELL)
             head_kids.append(hp(lash))
         if have("eyebrow-%s" % side):
             brow = add("Eyebrow %s" % side.upper(), part_img("eyebrow-%s" % side), -0.02)
             head_kids.append(hp(brow))
         eyes[side] = (white, iris, lash, brow, comp)
+        lids[side] = np.asarray(white_img)[..., 3] > 128
     closed = None
     if os.path.exists(os.path.join(ld, "eyes_closed.png")):   # the drawn closed eyes, faded in at the end of the blink
         closed = add("Eyes Closed", Image.open(os.path.join(ld, "eyes_closed.png")).convert("RGBA"), -0.03)
@@ -1024,15 +1039,19 @@ def rig_st(hero, series, out=None):
         for pt in (lash, brow):
             if pt is not None:
                 yaw.append(value_binding(pt.uuid, "transform.t.x", [-3.0, 0.0, 3.0]))
-        bottom = white.box[3]
         eye_h = max(4.0, white.box[3] - white.box[1])
-        for pt in (white, iris):   # squash toward the lower lid
-            if pt is None:
-                continue
-            shut = [[0.0, (bottom - pt.world_y(i)) * 0.92] for i in range(len(pt.verts))]
-            blink.append(deform_binding(pt, [[[0.0, 0.0]] * len(pt.verts), shut]))
+        # the upper lid comes down column by column onto the eye's own lower edge: the eye white folds onto that
+        # edge, the iris keeps its shape and is hidden as the eye white (its clip) folds, and the lashes come down
+        # by the eye's height in their column, more in the middle than at the corners, so the arch turns over
+        top_y, bot_y = eye_edges(lids[side])
+        shut = [[0.0, bot_y(white.world_x(i)) - white.world_y(i)] for i in range(len(white.verts))]
+        blink.append(deform_binding(white, [[[0.0, 0.0]] * len(white.verts), shut]))
         if lash is not None:
-            blink.append(value_binding(lash.uuid, "transform.t.y", [0.0, eye_h * 0.7]))
+            # each point comes down to the lower edge at most: the upper lashes all the way, a stroke drawn along the
+            # lower edge (the outer corner's) stays where it is
+            down = [[0.0, float(np.clip(bot_y(lash.world_x(i)) - lash.world_y(i), 0.0, bot_y(lash.world_x(i)) - top_y(lash.world_x(i))))]
+                    for i in range(len(lash.verts))]
+            blink.append(deform_binding(lash, [[[0.0, 0.0]] * len(lash.verts), down]))
         if brow is not None:
             blink.append(value_binding(brow.uuid, "transform.t.y", [0.0, eye_h * 0.15]))
             brows.append(value_binding(brow.uuid, "transform.t.y", [0.0, -eye_h * 0.35]))
