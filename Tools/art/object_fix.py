@@ -979,7 +979,7 @@ def main():
     ap.add_argument("--only", default="", help="x0,y0,x1,y1: fill only inside this box")
     ap.add_argument("--desc", default="", help="what the part is, for the prompt, when the default doesn't fit")
     ap.add_argument("--outline", action="store_true",
-                    help="colour inside the outline outline.py completed, held to it as line art (22b step 4)")
+                    help="colour inside the outline outline.py completed, held to it as line art (Docs/Flow/05_Objects.md)")
     ap.add_argument("--flat", action="store_true",
                     help="inside the outline, what a layer in front hides or the plate doesn't show becomes the part's "
                          "own visible colour (a forehead under bangs is flat skin); no ComfyUI; candidate 8")

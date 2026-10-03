@@ -275,7 +275,7 @@ class WfTest(unittest.TestCase):
                     for row in rows(s.get("foreach")):
                         self.assertTrue(command(c.lstrip("? "), dict(v, **row), "x"), c)
                 self.assertFalse([f for f in focus(owner.get("focus"), r.flow) if "找不到" in f], owner["id"])
-        for i in ("L0", "L1", "L2", "L3", "L4", "L5a", "L5b", "L5c", "L6", "L6b", "L7", "L8", "L9", "L10", "L11", "L12", "L14"):
+        for i in ("L0", "L1", "L2", "L3", "L4", "L5a", "L5b", "L5c", "L6", "L7", "L9", "L10", "L11", "L12", "L13", "L13b", "L14"):
             self.assertIn(i, checks)
         for fid, f in r.flow.fixes.items():
             fv = dict(v, **{k: "1" for k in f.get("params", {})})

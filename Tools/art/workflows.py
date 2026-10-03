@@ -98,7 +98,7 @@ def defaults():
         "6": _n("SeeThrough_PostProcess", "整理", layers_depth=["5", 0], tblr_split=True, use_lama=True),
         "7": _n("SeeThrough_SavePSD", "存 PSD", parts=["6", 0], filename_prefix="seethrough"),
     }
-    # a plate's line art (Live 2D outlines, 22b step 2): white lines on black
+    # a plate's line art (Live 2D outlines, Docs/Flow/05_Objects.md): white lines on black
     lineart = {
         "1": _n("LoadImage", "輸入圖", image=""),
         "2": _n("LineArtPreprocessor", "抽線", image=["1", 0], coarse="disable", resolution=1024),

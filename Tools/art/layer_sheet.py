@@ -1,4 +1,4 @@
-"""Every layer of a split on one sheet, each cut to its own box on a checker, named, with its pixel count (Docs/Design/22b L2:
+"""Every layer of a split on one sheet, each cut to its own box on a checker, named, with its pixel count (Docs/Flow/02_Split.md L2:
 the stack shows the whole matches the plate; this shows what each layer holds - a face half made of hat band, a fireball
 spread over three layers).
 

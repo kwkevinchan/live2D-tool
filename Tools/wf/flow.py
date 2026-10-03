@@ -5,7 +5,7 @@ files they read and write, their checkpoint, the pictures to look at, the points
     F.steps, F.step("see_through"), F.fixes["reseed"], F.downstream("objects"), F.limit("per_object")
     command("python Tools/art/x.py {hero} --seed={seed}", vars)      -> argv (a token with an empty value is left out)
     expand("st/groups/parts_{1..6}.jpg", vars)                       -> six patterns
-    focus("22b#L4", F)                                               -> the bullets of that checkpoint in 22b
+    focus("flow#L4", F)                                              -> the bullets of that checkpoint in Docs/Flow/
 
 Placeholders are {name}; values come from the run (hero, series, dir, ...), [flow.vars], the step's vars, its foreach
 row and a verdict's params. A token whose placeholder renders empty is dropped whole, so optional flags are written
@@ -155,7 +155,15 @@ def command(tmpl, v, same=None):
 
 
 def doc_section(path, check):
-    """(name, bullets) of a checkpoint's '**L4 name**' paragraph in 22b's points to watch"""
+    """(name, bullets) of a checkpoint's '**L4 name**' paragraph: in one file, or in the first file of a folder that
+    has it (Docs/Flow/: one file per step, each with its points to watch)"""
+    if os.path.isdir(path):
+        for f in sorted(os.listdir(path)):
+            if f.endswith(".md"):
+                name, out = doc_section(os.path.join(path, f), check)
+                if name:
+                    return name, out
+        return None, []
     if not os.path.exists(path):
         return None, []
     name, out, on = None, [], False
@@ -173,7 +181,7 @@ def doc_section(path, check):
 
 
 def focus(items, flow):
-    """'22b#L4' expanded to that checkpoint's bullets (the doc read every time, so a changed 22b is followed);
+    """'flow#L4' expanded to that checkpoint's bullets (the docs read every time, so a changed doc is followed);
     anything else kept as written"""
     out = []
     for it in listify(items):

@@ -1,5 +1,7 @@
 # 流程程式：讓程式跑流程、LLM 只看圖下結論（設計，2026-10-02）
 
+> 2026-10-03：流程本身搬到 [../Flow/](../Flow/README.md)，每一步一份文件；注意重點改從那裡取（`flow#L4`），檢查點重新編號（部件動作 L9、靜態 L10、標準動作 L11、物件 L13、整合 L13b）。下面的設計保留當時的寫法（`22b#L4`）。
+
 這份是「流程程式」`wf` 的設計：把 [22b_Live2D_Flow.md](22b_Live2D_Flow.md) 的甲流程（檢查點 L1～L14、三層重做上限、四道保險、各檢查點的注意重點）寫成一個設定檔，由程式照著跑。工具本身不改；工具的說明見 [../Code/README.md](../Code/README.md)，過去的錯誤見 [../LessonsLearned.md](../LessonsLearned.md)。
 
 **已經做好（2026-10-02，分支 `wf-engine`）**：程式在 `Tools/wf/`，流程在 `flows/plate.toml`，說明在 [../Code/10_Workflow.md](../Code/10_Workflow.md)。下面第一～八節是原本的設計；做的時候改了的地方列在第九節，第十節的問題先用暫定的答案。
@@ -8,7 +10,7 @@
 
 現在整條流程是 Claude Code 對話憑記憶照 22b 跑的：
 
-- **步驟會被跳過**：2026-10-02 芙蕾雅主設計的部件動作測試（L6b）整步漏做，一路做到整合驗證，使用者問了才補（`llm_checks.md`：「這一步原本漏做，使用者指出後補」）。
+- **步驟會被跳過**：2026-10-02 芙蕾雅主設計的部件動作測試（L9）整步漏做，一路做到整合驗證，使用者問了才補（`llm_checks.md`：「這一步原本漏做，使用者指出後補」）。
 - **上限和保險靠手記**：每個物件試了幾次、哪種做法已經失敗兩次、這一包重做了幾次，都是對話自己數。帽子試了 7 張、5 種做法，數得對是運氣。
 - **每張檢查圖都要手動打開**：做完一步，對話要自己想起來該看哪幾張圖、對照哪幾條注意重點。
 
@@ -114,10 +116,10 @@ foreach = { pack = ["arms", "legs", "head", "body", "weapon", "held"] }
 cmd = "{godot} --audio-driver Dummy --path . res://Tests/live/motion_test.tscn -- {inx} {dir}/_packs pack={pack} nophys"
 then = ["python Tools/art/motion_sheet.py {dir}/_packs --max 16"]
 after = ["inx_rig"]
-check = "L6b"
+check = "L9"
 per_item = "pack"
 images = ["_packs/sheet_pack_{pack}.jpg"]
-focus = ["22b#L6b", "零件後面的補畫層有沒有空洞"]
+focus = ["22b#L9", "零件後面的補畫層有沒有空洞"]
 on_redo = "objects"          # 算進第二層（一包）的上限
 
 [[step]]
@@ -126,18 +128,18 @@ cmd = "{godot} --audio-driver Dummy --path . res://Tests/live/motion_test.tscn -
 foreach = { mode = ["nophys", "phys"] }
 then = ["python Tools/art/motion_sheet.py {dir}/_motions_{mode}"]
 after = ["pack_motion", "static"]
-check = "L9"
+check = "L11"
 per_item = "motion"
 images = ["_motions_nophys/sheet.jpg", "_motions_phys/sheet.jpg", "_motions_nophys/report.json"]
-focus = ["22b#L9"]
+focus = ["22b#L11"]
 
 [[step]]
 id = "integrate"
 cmd = "{godot} --audio-driver Dummy --path . res://Tests/live/motion_test.tscn -- {inx} {dir}/_motions_all"
 after = ["motions", "objects_check"]   # 6、7 都通過才能做
-check = "L11"
+check = "L13b"
 images = ["_motions_all/sheet.jpg"]
-focus = ["22b#L11"]
+focus = ["22b#L13b"]
 
 [[step]]
 id = "handover"
@@ -153,7 +155,7 @@ gate = "human"               # 交付一定給使用者看
 
 ## 二、物件迴圈：每個物件一件小工作
 
-L4（或 L6、L6b、L9 點名）判「重做」的每個物件，各自變成一件小工作 `objects/<物件名>`，有自己的狀態和次數，依 22b「由後往前補」排順序（身體、腿先，手臂、武器、頭髮後）。
+L4（或 L6、L9、L11 點名）判「重做」的每個物件，各自變成一件小工作 `objects/<物件名>`，有自己的狀態和次數，依 22b「由後往前補」排順序（身體、腿先，手臂、武器、頭髮後）。
 
 一件小工作照三小步走，每一小步都停下來給 LLM 看：
 
@@ -178,7 +180,7 @@ L4（或 L6、L6b、L9 點名）判「重做」的每個物件，各自變成一
 
 1. **次數上限**：上表，程式每執行一次修法就加一，到了就把狀態改成 `blocked`，審查包裡附上全部的嘗試。
 2. **同一個問題、同一種做法失敗兩次就不准再用**：每次結論都要寫「問題的種類」（固定幾種：`unrecognizable` 看不出是什麼、`incomplete` 不完整、`dirty` 有碎片或殘影或白洞、`misplaced` 位置或大小不對、`order` 前後錯、`style` 畫風不對）。程式記「物件＋問題種類＋修法」失敗幾次；兩次之後，下一個審查包的選單裡這個修法會被拿掉，審查的人挑了也會被退回。例：芙蕾雅的帽子「位置不對」，`--fit` 對位失敗兩次後，選單只剩 `--box`、換來源（從原圖切）等。
-3. **通過的物件凍結**：通過的物件之後只有 L6、L6b、L9 的結論**點名**它才會重開，重開的次數算進那一層的上限。程式拒絕對凍結的物件執行修法。
+3. **通過的物件凍結**：通過的物件之後只有 L6、L9、L11 的結論**點名**它才會重開，重開的次數算進那一層的上限。程式拒絕對凍結的物件執行修法。
 4. **時限**：程式記每一步的開始、結束時間，加總超過 `estimate_min × 2` 就停。
 
 ## 三、狀態檔 `run.json`
@@ -203,7 +205,7 @@ L4（或 L6、L6b、L9 點名）判「重做」的每個物件，各自變成一
       ],
       "banned": [ "place_fit:misplaced" ]
     },
-    "pack_motion": { "status": "needs_review", "attempts": 1, "review": "L6b-1" },
+    "pack_motion": { "status": "needs_review", "attempts": 1, "review": "L9-1" },
     "motions":     { "status": "pending",  "stale_because": null }
   }
 }
@@ -295,7 +297,7 @@ reviews/L4-2/
 - `verdict` 只能是 `pass`、`redo`、`split`（要再拆）。`redo` 和 `split` 一定要有 `fix`，而且要在選單裡、不在 `banned` 裡、參數型別對。
 - `reason` 要寫**在哪張圖的哪裡**（「parts_1.jpg 帽子那格的右下」），不能只寫「不好」。
 - 有候選圖的檢查點（L5b）用 `pick` 挑一張；`pick: null` 表示一張都不挑。
-- 一張圖有好幾個物件時（L4、L6b、L9），每個物件、每一包、每個動作都要有一筆；少一筆程式就退回（22b「逐個物件看」）。
+- 一張圖有好幾個物件時（L4、L9、L11），每個物件、每一包、每個動作都要有一筆；少一筆程式就退回（22b「逐個物件看」）。
 - `manual`：選單外的修法（例如 2026-10-02 手動照下巴線切掉臉的下緣、用裙子顏色補法杖後面的洞）。由對話或使用者直接改檔，`what` 寫改了什麼；程式重新算指紋、照常算一次重做。同一種手動修法用到第二次，就該做成工具、加進選單（記在 `Docs/Code/`）。
 
 程式收到結論後：照 `fix` 執行指令，做完自動產生下一個審查包；全部通過才往下一步。
@@ -377,7 +379,7 @@ reviews/L4-2/
 
 | 比什麼 | 手動那次 | 程式要做到 |
 |---|---|---|
-| 有沒有漏步驟 | L6b 漏做，使用者指出才補 | 每一步都有審查包，L6b 在 L8、L9 前面 |
+| 有沒有漏步驟 | L9 漏做，使用者指出才補 | 每一步都有審查包，L9 在 L10、L11 前面 |
 | 物件重做次數 | 帽子 7 張、5 種做法；前髮 2 輪；其他 1 次 | `run.json` 數得出來，而且跟紀錄對得上 |
 | 禁用做法 | 靠對話自己記 | `--fit` 對位失敗兩次後從選單消失 |
 | 選單外的修法 | 下巴照線切、裙子補洞、法杖中線、`hidden` 刪範圍外，都是臨時寫的 | 每個 `manual` 都有紀錄，列成「要做成工具」清單 |

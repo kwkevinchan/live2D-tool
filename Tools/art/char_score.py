@@ -19,10 +19,10 @@ All three are ONNX, run on the CPU with onnxruntime (no torch, no GPU); the file
         each object (st/part_*.png) and each pack (the objects of a pack stacked) against the same-named object /
         pack of the hero's other series (default: every other series with an st/ split)
     python Tools/art/char_score.py flag <hero> <series> <out.json> <image|folder> ... [--every N] [--limit 0.10]
-        the flow's hint (wf, a "?" command at L8, L9, L11): ccip of each render (folders walked, every Nth frame),
+        the flow's hint (wf, a "?" command at L10, L11, L13b): ccip of each render (folders walked, every Nth frame),
         the scores and the ones over the limit in <out.json>; exit 1 when any is over
     python Tools/art/char_score.py flag-packs <hero> <series> <out.json> [--packs face,hair,clothes] [--limit 0.10]
-        the same per pack against the same pack of the hero's other splits (L6, L6b); none = skipped, exit 0
+        the same per pack against the same pack of the hero's other splits (L6, L9); none = skipped, exit 0
     python Tools/art/char_score.py experiment <out_dir>
         the 22d experiment on Freya: makes the bad cases in <out_dir>, scores good / bad / other character at
         object, pack and whole level, writes <out_dir>/scores.json and prints the tables

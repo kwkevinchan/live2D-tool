@@ -1,6 +1,6 @@
 # 驗：檢查與預覽
 
-驗收順序（`Docs/Design/22b`）：每個物件完整 → 一包組起來 → 整體組起來 → 動作。人物、武器和物件分開驗，各自通過才整合。
+驗收順序（`Docs/Flow/README.md`）：每個物件完整 → 一包組起來 → 整體組起來 → 動作。人物、武器和物件分開驗，各自通過才整合。
 
 | 檢查 | 程式 | 流程甲 |
 |---|---|---|
@@ -181,8 +181,8 @@ _ready()
 - 每個動作從模型的預設值開始。模型缺的參數記在 `report.json`（`{動作: {name, missing}}`）；分段手腳缺的記成「手臂分段」「腿分段」這類說明。
 - **`bare`**：關掉 `Weapon`、`Weapon Back`、`Body Accessory` 和所有 `Other …` 部件，先驗人物本身（第 6 步）；不加就是整合驗證（第 8 步）。
 - **`nophys`**：關掉所有擺動（頭髮、裙子、披風不動），先看關節，再打開看擺動。
-- 每個動作寫 `frames.json`（每張存檔的參數值、整個模型的移動），`Tools/art/motion_sheet.py <資料夾> [--max N]` 挑出參數最大、最小、移動最多的幾格，原尺寸排成 `sheet_<動作>.jpg`（LLM 讀圖時動圖只看得到第一格，所以 L9、L11 看這張）。工作室另外把截圖做成動圖給人看。
-- **`pack=<包>`（部件動作測試，22b 第 4b 步、L6b）**：只畫 `PACKS` 裡這一包的零件（照節點名稱開頭比對：`arms`、`legs`、`head`、`body`、`weapon`、`held`），把這包的參數（照參數名稱開頭比對、跳過被擺動帶動的）一個一個轉：每個 `PACK_SWEEP`（1.2 秒）0 → +1 → -1 → 0，不加呼吸。存在 `<輸出>/pack_<包>/`，同樣寫 `frames.json`，用 `motion_sheet.py --max 16` 做總表。
+- 每個動作寫 `frames.json`（每張存檔的參數值、整個模型的移動），`Tools/art/motion_sheet.py <資料夾> [--max N]` 挑出參數最大、最小、移動最多的幾格，原尺寸排成 `sheet_<動作>.jpg`（LLM 讀圖時動圖只看得到第一格，所以 L11、L13b 看這張）。工作室另外把截圖做成動圖給人看。
+- **`pack=<包>`（部件動作測試，`Docs/Flow/09_PackMotion.md`、L9）**：只畫 `PACKS` 裡這一包的零件（照節點名稱開頭比對：`arms`、`legs`、`head`、`body`、`weapon`、`held`），把這包的參數（照參數名稱開頭比對、跳過被擺動帶動的）一個一個轉：每個 `PACK_SWEEP`（1.2 秒）0 → +1 → -1 → 0，不加呼吸。存在 `<輸出>/pack_<包>/`，同樣寫 `frames.json`，用 `motion_sheet.py --max 16` 做總表。
 
 ## 6. 單一模型預覽（`Tests/live/puppet_preview.gd`）
 

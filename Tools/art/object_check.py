@@ -1,6 +1,6 @@
 """The weapon and the other objects checked on their own, before they join the character (the owner's order,
 2026-10-01: the character passes its standard motions without them, the objects pass here, then the two are put
-together). Docs/Design/22b step 7.
+together). Docs/Flow/13_Objects.md.
 
     python Tools/art/object_check.py <hero> <series>
 

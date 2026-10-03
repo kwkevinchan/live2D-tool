@@ -317,7 +317,7 @@ class Run:
         self.open_review(step, job, v)
 
     def order_of(self, step, key):
-        """back to front (22b): the order list's first matching prefix"""
+        """back to front (Docs/Flow/05_Objects.md): the order list's first matching prefix"""
         name = key.split("/", 1)[1]
         order = step.get("order", [])
         return next((i for i, p in enumerate(order) if name.startswith(p)), len(order)), key

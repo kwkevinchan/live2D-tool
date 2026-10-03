@@ -1,7 +1,7 @@
 """The biggest moves of each standard motion on one sheet (the LLM reads pictures, and a GIF shows it only its first
 frame, 2026-10-02): from Tests/live/motion_test.tscn's output, per motion the frames where a parameter is at its
 largest or smallest, or the whole model is moved furthest, plus the first frame; cut to the figure at full size, one
-row per motion. Checkpoints L9 / L11 look at this sheet.
+row per motion. Checkpoints L11 / L13b look at this sheet.
 
     python Tools/art/motion_sheet.py <motions_dir> [out.jpg] [--max 6]
 

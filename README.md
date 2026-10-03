@@ -6,7 +6,7 @@
 
 ## 流程
 
-詳細規則見 `Docs/Design/22b_Live2D_Flow.md`（固定流程甲），AI 重畫的研究見 `Docs/Design/22c_Object_Generation.md`，程式說明見 `Docs/Code/README.md`（每支程式的呼叫流程、參數、檔案格式）。
+流程見 `Docs/Flow/README.md`（每一步一份文件），背景見 `Docs/Design/22b_Live2D_Flow.md`，AI 重畫的研究見 `Docs/Design/22c_Object_Generation.md`，程式說明見 `Docs/Code/README.md`（每支程式的呼叫流程、參數、檔案格式）。
 
 1. **找骨架**：`Tools/art/live_layers.py parts <角色> <服裝>`（姿勢偵測，寫 `fig_joints.json`；偵測錯要手動修）
 2. **拆圖層**：`Tools/art/see_through.py <角色> <服裝>`（拆層模型；`--rebuild` 不用顯示卡重排）
@@ -52,7 +52,7 @@
 
 1. ✅ 立繪路徑、角色設定、外部路徑已改成設定檔（2026-10-02）。`plates` 目前仍指向 towerD 的立繪資料夾，換成別的資料夾只要改 `live2d.toml`。
 2. **`heroine_j3.py`、`key_poses.py` 整支帶過來了**：其實只用到局部重畫、送工作、提示詞、角色微調、動作骨架這幾個功能，要抽成小模組。（`heroine_j3.py install` 已拿掉，去背搬成 `cutout.py`，2026-10-02。）
-3. **待使用者決定（22b 的檢討）**：放置工具 `--merge` 會把原圖像素貼回 AI 畫好的物件、綁定時會切掉人物輪廓外的部分、分包工具會印跟原圖的差異百分比；另外拆層的 `to_plate`、切零件的 `order_for_motion` 會把看得到的地方換成原圖顏色。這些都讓結果往「像原圖」跑（見 `Docs/Code/README.md` 第 4 節）。
+3. **待使用者決定（2026-10-02 的檢討）**：放置工具 `--merge` 會把原圖像素貼回 AI 畫好的物件、綁定時會切掉人物輪廓外的部分、分包工具會印跟原圖的差異百分比；另外拆層的 `to_plate`、切零件的 `order_for_motion` 會把看得到的地方換成原圖顏色。這些都讓結果往「像原圖」跑（見 `Docs/Code/README.md` 第 4 節）。
 
 ## 規矩
 

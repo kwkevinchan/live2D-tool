@@ -203,7 +203,7 @@ def validate(req, v, wdir, awaiting_user=False):
             if allowed[f["id"]].get("kind") == "opens":
                 for o in (f["args"].get("objects") or name).split(","):
                     if o in req.get("frozen", []) and not req.get("reopens"):
-                        errs.append("%s%s 已通過、凍結；只有 L6、L6b、L9 這類組裝檢查能點名重開" % (tag, o))
+                        errs.append("%s%s 已通過、凍結；只有 L6、L9、L11 這類組裝檢查能點名重開" % (tag, o))
             kinds.append(allowed[f["id"]].get("kind"))
         if verdict == "split" and "split" not in kinds:
             errs.append("%ssplit 要有一個拆法（%s）" % (tag, "、".join(k for k, m in menu.items() if m.get("kind") == "split") or "這一步沒有"))

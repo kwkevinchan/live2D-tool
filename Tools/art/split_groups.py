@@ -13,7 +13,7 @@ accessories, the hat, the neck; the collar is looked at here but stays in the to
 
 Writes <work>/live/<hero>/<series>/st/groups/: <n>_<pack>/ (the pack's part images), parts_<n>.jpg (check 1),
 assemble_<n>.jpg (check 2), groups.json (what went where, the checks' numbers and warnings). Read by the Live 2D
-studio's folder tab. Docs/Design/22b step 2.
+studio's folder tab. Docs/Flow/04_Packs.md.
 """
 import json
 import os

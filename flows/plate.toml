@@ -1,8 +1,8 @@
-# 一張立繪的流程（Docs/Design/22b_Live2D_Flow.md 甲），由流程程式 wf 照著跑（Docs/Design/23_Workflow.md、
+# 一張立繪的流程（Docs/Flow/README.md，每一步一份文件），由流程程式 wf 照著跑（Docs/Design/23_Workflow.md、
 # Docs/Code/10_Workflow.md）。沒寫在這裡的步驟不會被做，寫了的不會被跳過；要跳過只能標 skip = "原因"。
 #
 # 目前只做人物（使用者 2026-10-02）：character_only 把武器、手上的東西拿掉（原檔留在 st/_orig/），武器包、
-# 手上物件包的部件測試不跑，L10 物件驗證、L11 整合跳過。帽子、髮飾算人物。要做物件時拿掉這些。
+# 手上物件包的部件測試不跑，L13 物件驗證、L13b 整合跳過。帽子、髮飾算人物。要做物件時拿掉這些。
 #
 # 代入的值：{hero} {series} {dir}（工作資料夾）{live} {name}（<hero>_default 或 <hero>_<series>）{godot}
 # {plate_dir} {mv_python}，[flow.vars]，步驟的 vars、foreach 的一列、結論的 params。
@@ -13,21 +13,21 @@
 name = "plate"
 work = "{live}/{hero}/{series}"
 estimate_min = 120          # 整張立繪的預估時間；用掉超過兩倍就停（時限規則）
-docs = { 22b = "Docs/Design/22b_Live2D_Flow.md" }   # focus 的 "22b#L4" 從這份取「各檢查點的注意重點」
+docs = { flow = "Docs/Flow" }   # focus 的 "flow#L4" 從 Docs/Flow/ 的步驟文件取「注意重點」（**L4 名稱** 後面的條列）
 
 [flow.vars]
 inx = "{dir}/{name}_st.inx"
 checkdir = "{live}/check"
 
-[limits]                    # 22b「三層檢查與重做上限」，由程式數
+[limits]                    # Docs/Flow/README.md「重做上限和保險」，由程式數
 per_object = 10             # 測試期間；原本 3
 per_pack_factor = 2         # 一包的物件重做總數 ≤ 物件數 × 2
 per_pack_min = 6
 pack_rounds = 3             # 一包的組裝檢查最多幾輪
 plate_redos = 30            # 整張立繪的物件重做總數
-plate_rounds = 3            # 整張立繪的組裝檢查（L6、L6b、L9、L11）最多幾輪
+plate_rounds = 3            # 整張立繪的組裝檢查（L6、L9、L11、L13b）最多幾輪
 same_way_fails = 2          # 同一個問題、同一種做法失敗兩次就不准再用
-step_redos = 3              # 一般步驟（L1、L2、L3、L7、L8 ...）重做幾次就停
+step_redos = 3              # 一般步驟（L1、L2、L3、L7、L10 ...）重做幾次就停
 
 [checks]
 L0 = "選立繪"
@@ -205,7 +205,7 @@ gate = "human"              # 選哪一張立繪是使用者的決定
 cmd = 'python -c "import os, shutil, sys; [shutil.copy2(os.path.join(sys.argv[1], f), sys.argv[2]) for f in (\"full.png\", \"full_blink.png\") if os.path.exists(os.path.join(sys.argv[1], f)) and not os.path.exists(os.path.join(sys.argv[2], f))]" {plate_dir} {dir}'
 outputs = ["full.png"]
 images = ["full.png", "full_blink.png"]
-focus = ["這是使用者要做的那一張立繪嗎（主設計或哪一套造型）"]
+focus = ["flow#L0"]
 
 [[step]]
 id = "joints"
@@ -216,8 +216,7 @@ inputs = ["full.png"]
 then = ["python Tools/art/live_layers.py joints {hero} {series}"]   # 現在的關節點畫在立繪上（手改之後也重畫）
 outputs = ["fig_joints.json", "fig_overview.png", "fig_joints.jpg"]
 images = ["fig_joints.jpg", "fig_overview.png"]
-focus = ["22b#L1", "看 fig_joints.jpg（現在的關節點、名字）；fig_overview.png 是自動抓的，手改之後不會變",
-         "改關節點用 manual：手改 fig_joints.json（原本的另存 fig_joints_detected.json）"]
+focus = ["flow#L1"]
 fix = ["rerun"]
 
 [[step]]
@@ -230,7 +229,7 @@ inputs = ["full.png", "fig_joints.json"]
 then = ["python Tools/art/layer_sheet.py {dir}/st"]   # 每一層單獨看（修過之後也重畫）
 outputs = ["st/part_*.png", "st/parts.json", "st/_stack_vs_plate.jpg", "st/_layers.jpg"]
 images = ["st/_layers.jpg", "st/_stack_vs_plate.jpg", "st/parts.json"]
-focus = ["22b#L2", "被擋住的地方猜錯的先記下來，用 to_objects 交給物件迴圈"]
+focus = ["flow#L2"]
 fix = ["reseed", "make_face", "split_lr", "drop_part", "sort_hair", "move_hair"]
 pass_fix = ["to_objects"]
 
@@ -250,7 +249,7 @@ then = ["python Tools/art/split_groups.py {hero} {series}"]   # 先分一次包�
 inputs = ["full.png", "fig_joints.json"]
 outputs = ["st/parts.json", "st/groups/groups.json"]
 images = ["st/groups/parts_4.jpg", "st/groups/parts_5.jpg", "st/groups/parts_3.jpg"]
-focus = ["22b#L3", "鏡像、補灰色糊塊這類要挑候選的修法，用 to_objects 交給物件迴圈"]
+focus = ["flow#L3"]
 fix = ["weapon_points", "specks", "rerun", "to_objects"]
 pass_fix = ["to_objects"]
 
@@ -265,8 +264,7 @@ cmd = "python Tools/art/split_groups.py {hero} {series}"
 inputs = ["st/parts.json", "st/part_*.png"]
 outputs = ["st/groups/groups.json", "st/groups/parts_*.jpg", "st/groups/assemble_*.jpg"]
 images = ["st/groups/parts_{1..6}.jpg", "st/groups/groups.json"]
-focus = ["22b#L4", "先問看得出來是什麼嗎；看不出來就不通過",
-         "目前只做人物（使用者 2026-10-02）：武器、手上拿的東西（火球等）不送進物件迴圈；散在別的層裡的手上物件用 carve 切成 held-<l|r>，下一步整層拿掉。帽子、髮飾算人物"]
+focus = ["flow#L4"]
 fix = ["to_objects", "carve", "split_hair", "split_front"]
 
 [[step]]
@@ -285,7 +283,7 @@ per_item = "pack"
 items = "groups:packs"
 rounds = "pack"
 reopens = true
-# 由後往前補（22b）：身體、腿先，手臂、武器、頭髮後
+# 由後往前補（Docs/Flow/05_Objects.md）：身體、腿先，手臂、武器、頭髮後
 order = ["hidden", "bottomwear", "legwear", "thigh", "shin", "foot", "topwear", "chest", "abdomen", "belly", "cape",
          "neck", "face", "ears", "eye", "irides", "eyelash", "eyebrow", "mouth", "nose", "upperarm", "forearm", "hand",
          "sleeve", "objects", "held", "back_hair", "hair_ends", "side", "front_hair", "bangs", "headwear", "ribbon"]
@@ -293,7 +291,7 @@ outputs = ["st/part_*.png", "st/parts.json", "st/outline/*", "st/fix/*", "st/gen
 then = ["python Tools/art/split_groups.py {hero} {series}",   # 組裝檢查手改之後重畫組裝圖
         "? python Tools/art/char_score.py flag-packs {hero} {series} {dir}/_score/L6_packs.json"]   # 22d：臉、頭髮、衣服跟其他拆好的版本比
 images = ["st/groups/assemble_{1..6}.jpg", "_score/L6_packs.json"]
-focus = ["22b#L6", "改前後順序用 manual（改 parts.json 的順序）", "_score 的分數超過界線的那一包要仔細看（只是提醒，不是結論）"]
+focus = ["flow#L6"]
 fix = ["to_objects"]
 
   [[step.stage]]
@@ -301,7 +299,7 @@ fix = ["to_objects"]
   check = "L5a"
   cmd = "python Tools/art/outline.py {hero} {series} {part}"
   images = ["st/outline/{part}.jpg"]
-  focus = ["22b#L5a", "通過時從 pass_menu 挑出候選的做法（被擋住的用 AI 重畫，四肢先試鏡像）"]
+  focus = ["flow#L5a"]
   fix = ["outline_marks", "split_front", "carve"]
   pass_fix = ["edit_fast", "edit_slow", "fix_outline", "fix_fill", "mirror", "flat", "drop_specks", "cap", "defringe"]
 
@@ -309,7 +307,7 @@ fix = ["to_objects"]
   id = "candidates"
   check = "L5b"
   pick = true
-  focus = ["22b#L5b", "pick 寫挑中的那一張（st/gen/<圖層>_qf<種子>.png 或 st/fix/<圖層>_<種子>.png）；都不好就 redo"]
+  focus = ["flow#L5b"]
   fix = ["edit_fast", "edit_slow", "fix_outline", "fix_fill", "mirror", "outline_marks", "carve", "split_front"]
   pass_fix = ["place_box", "place_fit", "place_plain", "apply"]
 
@@ -318,7 +316,7 @@ fix = ["to_objects"]
   check = "L5c"
   then = ["? python Tools/art/outline.py {hero} {series} {part} --check", "python Tools/art/split_groups.py {hero} {series}"]
   images = ["st/groups/parts_{pack}.jpg", "st/groups/assemble_{pack}.jpg"]
-  focus = ["22b#L5c"]
+  focus = ["flow#L5c"]
   fix = ["place_box", "place_fit", "place_plain", "apply", "flat", "drop_specks", "cap", "defringe", "edit_fast", "edit_slow", "fix_fill",
          "mirror", "outline_marks", "carve", "split_front"]
 
@@ -330,7 +328,7 @@ cmd = "python Tools/art/live_layers.py mouths {hero} {series}"
 inputs = ["full.png"]
 outputs = ["mouth_closed.png", "mouth_a.png", "mouth_i.png", "mouth_o.png"]
 images = ["mouth_closed.png", "mouth_a.png", "mouth_i.png", "mouth_o.png"]
-focus = ["22b#L7"]
+focus = ["flow#L7"]
 fix = ["rerun"]
 
 [[step]]
@@ -342,7 +340,7 @@ outputs = ["{name}_st.inx"]
 
 [[step]]
 id = "pack_motion"          # 第 4b 步：2026-10-02 漏做的那一步，寫死在流程裡
-check = "L6b"
+check = "L9"
 after = ["inx_rig"]
 per_item = "pack"
 items = "foreach:pack"
@@ -354,41 +352,41 @@ then = ["python Tools/art/motion_sheet.py {dir}/_packs --max=16"]
 after_fix = "cmd"
 inputs = ["{name}_st.inx"]
 images = ["_packs/sheet_pack_{pack}.jpg"]
-focus = ["22b#L6b", "零件後面的補畫層有沒有空洞"]
+focus = ["flow#L9"]
 rounds = "pack"             # 算進第二層（一包）的上限
 reopens = true
 fix = ["to_objects", "rerig"]
 
 [[step]]
 id = "shots"
-check = "L8"
+check = "L10"
 after = ["pack_motion"]
 cmd = ["? python Tools/art/rig_check.py {hero}/{series}",
        "{godot} --audio-driver Dummy --path . res://Tests/live/puppet_preview.tscn -- {inx} {dir}/_shots",
-       "? python Tools/art/char_score.py flag {hero} {series} {dir}/_score/L8.json {dir}/_shots"]   # 22d：像不像這個角色，超過界線的要看
+       "? python Tools/art/char_score.py flag {hero} {series} {dir}/_score/L10.json {dir}/_shots"]   # 22d：像不像這個角色，超過界線的要看
 inputs = ["{name}_st.inx"]
 outputs = ["_shots/000_rest.png"]
 images = ["_shots/000_rest.png", "_shots/030_yaw_right.png", "_shots/060_yaw_left_blink.png", "_shots/090_mouth_open.png",
-          "_shots/150_settled.png", "{checkdir}/{name}_check.jpg", "_score/L8.json"]
-focus = ["22b#L8", "check/<名稱>_check.jpg 跟原圖的比對只當參考"]
+          "_shots/150_settled.png", "{checkdir}/{name}_check.jpg", "_score/L10.json"]
+focus = ["flow#L10"]
 reopens = true
 fix = ["to_objects", "rerig"]
 
 [[step]]
 id = "motions"
-check = "L9"
+check = "L11"
 after = ["shots"]
 per_item = "motion"
 items = ["walk", "jump", "run", "wave", "head", "face", "idle", "hair", "hit", "glance"]
 cmd = ["{godot} --audio-driver Dummy --path . res://Tests/live/motion_test.tscn -- {inx} {dir}/_motions_nophys bare nophys",
        "{godot} --audio-driver Dummy --path . res://Tests/live/motion_test.tscn -- {inx} {dir}/_motions_phys bare"]
 then = ["python Tools/art/motion_sheet.py {dir}/_motions_nophys", "python Tools/art/motion_sheet.py {dir}/_motions_phys",
-        "? python Tools/art/char_score.py flag {hero} {series} {dir}/_score/L9.json {dir}/_motions_nophys --every=10"]
+        "? python Tools/art/char_score.py flag {hero} {series} {dir}/_score/L11.json {dir}/_motions_nophys --every=10"]
 after_fix = "cmd"
 inputs = ["{name}_st.inx"]
 outputs = ["_motions_nophys/report.json", "_motions_phys/report.json"]
-images = ["_motions_nophys/sheet_*.jpg", "_motions_phys/sheet_*.jpg", "_motions_nophys/report.json", "_score/L9.json"]
-focus = ["22b#L9", "先看關掉擺動（_motions_nophys），再看打開擺動（_motions_phys）"]
+images = ["_motions_nophys/sheet_*.jpg", "_motions_phys/sheet_*.jpg", "_motions_nophys/report.json", "_score/L11.json"]
+focus = ["flow#L11"]
 rounds = "plate"
 reopens = true
 fix = ["to_objects", "rerig"]
@@ -401,37 +399,37 @@ cmd = "? python Tools/art/rig_stress.py {hero}/{series}"
 after_fix = "cmd"
 inputs = ["{name}_st.inx"]
 images = ["{checkdir}/{name}_stress.jpg"]
-focus = ["22b#L12"]
+focus = ["flow#L12"]
 reopens = true
 fix = ["to_objects", "find_ranges", "rerig"]
 
 [[step]]
 id = "objects_check"
 skip = "目前只做人物（使用者 2026-10-02）：武器和手上的東西拿掉了；要做時拿掉這一行，character_only 也一起拿掉"
-check = "L10"
+check = "L13"
 after = ["motions"]          # 人物先通過，武器和物件再單獨驗
 cmd = "? python Tools/art/object_check.py {hero} {series}"
 after_fix = "cmd"
 inputs = ["st/groups/groups.json"]
 outputs = ["st/groups/objects/objects.json"]
 images = ["st/groups/objects/objects_check.jpg", "st/groups/objects/objects.json"]
-focus = ["22b#L10"]
+focus = ["flow#L13"]
 reopens = true
 fix = ["to_objects"]
 
 [[step]]
 id = "integrate"
 skip = "目前只做人物（使用者 2026-10-02）：人物和物件的整合先不做；要做時拿掉這一行"
-check = "L11"
+check = "L13b"
 after = ["motions", "objects_check"]   # 6、7 都通過才能做
 cmd = "{godot} --audio-driver Dummy --path . res://Tests/live/motion_test.tscn -- {inx} {dir}/_motions_all"
 then = ["python Tools/art/motion_sheet.py {dir}/_motions_all",
-        "? python Tools/art/char_score.py flag {hero} {series} {dir}/_score/L11.json {dir}/_motions_all --every=10"]
+        "? python Tools/art/char_score.py flag {hero} {series} {dir}/_score/L13b.json {dir}/_motions_all --every=10"]
 after_fix = "cmd"
 inputs = ["{name}_st.inx"]
 outputs = ["_motions_all/report.json"]
-images = ["_motions_all/sheet_*.jpg", "_score/L11.json"]
-focus = ["22b#L11"]
+images = ["_motions_all/sheet_*.jpg", "_score/L13b.json"]
+focus = ["flow#L13b"]
 rounds = "plate"
 reopens = true
 fix = ["to_objects", "rerig"]
@@ -442,4 +440,4 @@ check = "L14"
 gate = "human"              # 交付一定給使用者看
 after = ["integrate", "stress"]
 images = ["st/groups/parts_{1..6}.jpg", "st/groups/assemble_6.jpg", "_motions_phys/sheet.jpg", "llm_checks.md"]   # 只做人物：整合（_motions_all）跳過
-focus = ["22b#L14", "run.json 的 manual 是選單外的手動修法：列成「要做成工具」的清單", "wf status 看每個物件重做幾次"]
+focus = ["flow#L14"]

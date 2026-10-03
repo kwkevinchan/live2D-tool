@@ -17,7 +17,7 @@
 │  │  ├─ <角色>_<服裝>_st.inx、<角色>_<服裝>.inx   綁定結果（細部、粗）
 │  │  ├─ _shots/、_motions/、_motions_all/        動態截圖、標準動作
 │  │  ├─ _score/                                  像不像這個角色的分數（char_score.py flag，見 22d；流程程式的提醒）
-│  │  ├─ llm_checks.md                            LLM 每個檢查點的結論（見 22b「LLM 檢查點」；用流程程式時由它寫）
+│  │  ├─ llm_checks.md                            LLM 每個檢查點的結論（見 `Docs/Flow/README.md`「審查迴圈」；用流程程式時由它寫）
 │  │  ├─ run.json、reviews/<檢查點>-<n>/、wf_logs/   流程程式的狀態、審查包、工具輸出（見 10_Workflow.md）
 │  │  └─ st/                                      細部分層
 │  │     ├─ st_<名稱>.png、st_<名稱>_depth.png、st_layers.json      拆層模型的原始輸出

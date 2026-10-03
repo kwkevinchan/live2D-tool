@@ -1,4 +1,4 @@
-"""Live 2D 工作室: one local web page for the animated portraits' fixed flow 甲 (Docs/Design/22b, code flow
+"""Live 2D 工作室: one local web page for the animated portraits' fixed flow (Docs/Flow/README.md, code flow
 Docs/Code/08_Studio.md).
 
     python Tools/live2d_studio/app.py      (or Tools/live2d_studio/start.bat; LIVE2D_PYTHON picks another Python) -> http://127.0.0.1:7861

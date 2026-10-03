@@ -25,11 +25,11 @@ python Tools/wf unblock <角色>/<服裝> <步驟 | objects/<物件> | run> --re
 |---|---|
 | `Tools/wf/__main__.py` | `python Tools/wf` 的入口 |
 | `Tools/wf/cli.py` | 指令列、`status` 的列印 |
-| `Tools/wf/flow.py` | 讀設定檔、代入參數、展開 `{1..6}` 和 `foreach`、從 22b 取注意重點 |
+| `Tools/wf/flow.py` | 讀設定檔、代入參數、展開 `{1..6}` 和 `foreach`、從 `Docs/Flow/` 的步驟文件取注意重點 |
 | `Tools/wf/engine.py` | 狀態檔、執行工具、物件迴圈、上限和四道保險、處理結論 |
 | `Tools/wf/review.py` | 寫審查包、檢查結論格式、寫 `llm_checks.md` |
 | `Tools/wf/tests/` | 測試：假的流程 `fake_flow.toml`、代替工具的 `stub.py`、`test_wf.py` |
-| `flows/plate.toml` | 一張立繪的流程（22b 甲，L0～L14） |
+| `flows/plate.toml` | 一張立繪的流程（`Docs/Flow/`，L0～L14） |
 
 ## 2. 函式呼叫流程
 
@@ -82,7 +82,7 @@ main(argv)                                        cli.py
 name = "plate"
 work = "{live}/{hero}/{series}"      # 工作資料夾
 estimate_min = 120                   # 預估分鐘；用掉超過兩倍就停
-docs = { 22b = "Docs/Design/22b_Live2D_Flow.md" }
+docs = { flow = "Docs/Flow" }
 
 [flow.vars]                          # 自己加的值，可以用其他值組出來
 inx = "{dir}/{name}_st.inx"
@@ -113,14 +113,14 @@ check = "L4"
 | `after` | 要等哪幾步通過 |
 | `inputs`、`outputs` | 讀、寫哪些檔（工作資料夾裡的相對路徑，可用 `*`、`{1..6}`）；`inputs` 算指紋，`outputs` 跑完要存在 |
 | `check` | 檢查點；沒有就做完直接通過 |
-| `images`、`focus` | 審查包要看的圖、注意重點（`22b#L4` 由程式從 22b「各檢查點的注意重點」取那一段的條列） |
+| `images`、`focus` | 審查包要看的圖、注意重點（`flow#L4` 由程式從 `Docs/Flow/` 找到 `**L4 名稱**` 那一段的條列；`docs` 可以是一份文件或一個資料夾） |
 | `fix`、`pass_fix` | 沒通過時、通過時可以挑的修法（`[fix]` 的 id；`manual` 每一步都有） |
 | `gate = "human"` | 結論一定要 `by: "user"` |
 | `per_item`、`items` | 結論要一筆一筆：`items` 是一串名字，或 `groups:parts`（`groups.json` 的每個物件）、`groups:packs`（每一包）、`foreach:pack` |
 | `foreach` | 指令和圖照每一列各跑一次，例如 `[{ pack = "arms", phys = "nophys" }, { pack = "hair", phys = "" }]` |
 | `after_fix = "cmd"` | 修法做完後重跑這一步自己的指令（預設只跑 `then`） |
 | `rounds` | 組裝檢查：`pack`（每一包數輪數）或 `plate`（只數整張） |
-| `reopens` | 這個檢查點可以點名重開已通過的物件（L6、L6b、L8～L12） |
+| `reopens` | 這個檢查點可以點名重開已通過的物件（L6、L9、L10～L12） |
 | `kind = "each_object"`、`order`、`[[step.stage]]` | 物件迴圈（見第 5 節） |
 | `skip = "原因"` | 跳過，原因寫進紀錄 |
 
@@ -161,7 +161,7 @@ check = "L4"
 
 ## 5. 物件迴圈
 
-L2、L3 用 `to_objects` 記下的、L4 判重做的、L6／L6b／L8～L12 點名的物件，各自是一件小工作 `objects/<名字>`，照 `order`（由後往前：身體、腿先，手臂、武器、頭髮後）一次做一件。每件照三小步（`[[step.stage]]`）走，每一小步都停下來審：
+L2、L3 用 `to_objects` 記下的、L4 判重做的、L6／L9／L10～L12 點名的物件，各自是一件小工作 `objects/<名字>`，照 `order`（由後往前：身體、腿先，手臂、武器、頭髮後）一次做一件。每件照三小步（`[[step.stage]]`）走，每一小步都停下來審：
 
 | 小步 | 檢查點 | 自己的指令 | 通過時 |
 |---|---|---|---|
@@ -192,7 +192,7 @@ L2、L3 用 `to_objects` 記下的、L4 判重做的、L6／L6b／L8～L12 點�
 
 ## 7. 審查包 `reviews/<檢查點>-<第幾次>/`
 
-- `request.json`：`review`、`check`、`title`（例如「L4 部件檢查」，名字取自 22b）、`step`、`item`、`items`（要一筆一筆交的名字）、`images`（複製進來的檔名 `file` 和原本的位置 `from`；之後原檔改了，這裡的不會變）、`missing_images`、`focus`、`history`（這件工作最近十次的結論）、`counts`、`menu`、`pass_menu`、`pass_needs_fix`、`pick`、`banned`、`last_fix`、`fails`、`frozen`、`reopens`、`gate`、`hints`（工具的結束代碼）、`answer_with`（交結論的指令）、`verdict_template`（結論的空白範本）。
+- `request.json`：`review`、`check`、`title`（例如「L4 部件檢查」，名字取自步驟文件）、`step`、`item`、`items`（要一筆一筆交的名字）、`images`（複製進來的檔名 `file` 和原本的位置 `from`；之後原檔改了，這裡的不會變）、`missing_images`、`focus`、`history`（這件工作最近十次的結論）、`counts`、`menu`、`pass_menu`、`pass_needs_fix`、`pick`、`banned`、`last_fix`、`fails`、`frozen`、`reopens`、`gate`、`hints`（工具的結束代碼）、`answer_with`（交結論的指令）、`verdict_template`（結論的空白範本）。
 - `verdict.json`：審查的人寫（使用者改判另存 `verdict_user.json`）。
 
 ```json
