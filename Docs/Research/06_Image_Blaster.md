@@ -68,9 +68,37 @@
 - 輸出的商用授權：Meshy 免費方案是 CC BY 4.0（要標出處），付費方案可私有；其他家沒查。
 - 便宜不代表能用：三家對動漫角色的品質都還不知道，要先試。
 
+## 願意等的話：批次和彈性方案（2026-10-04 查官方文件）
+
+| 服務 | 方案 | 折扣 | 等多久 | 圖像模型能不能用 |
+|---|---|---|---|---|
+| Google Gemini | 批次 | 標準價 5 折 | 目標 24 小時內，多數更快；工作 48 小時過期 | **能**（價目表有 3.1 Flash、3.1 Flash Lite、3 Pro 圖像的批次價） |
+| | 彈性 | 5 折 | 1～15 分鐘，忙的時候會被拒絕要重試 | **不能**（只有文字模型） |
+| OpenAI | 批次 | 5 折 | 24 小時內 | **能**（GPT Image 2.5 的生成和編輯都可以） |
+| xAI Grok | 批次 | 文字 2～5 折 | 24 小時內 | 圖像可以送批次，但**照原價**（官方：批次折扣只適用文字和語言模型） |
+| Meshy、Tripo、混元 3D | 沒有 | — | — | 只有方案等級決定排隊優先；大方案每點比較便宜（混元的大點數包最低到定價的 67.5%） |
+
+批次價（每張）：Gemini 3 Pro Image 1K/2K 約 0.067、4K 約 0.12；3.1 Flash Image 約 0.022～0.076（依解析度）；3.1 Flash Lite 1K 約 0.017 美元。
+
+**代價**：一輪要等到 24 小時。我們「一個物件畫完、看完、放進組裡看完才做下一個」的做法，每輪都要等，會很慢。適合的用法是：第一輪大量候選（所有零件各出幾張）丟批次過夜，挑完、要重做的幾張用即時的。
+
+## xAI Grok 的圖像模型（2026-10-04）
+
+| 模型 | 官方價目頁 | 第三方整理的細分 |
+|---|---|---|
+| grok-imagine-image-2.0（2026-08） | 0.04 美元／張 | 1K 低品質 0.04、2K 低或 1K 中 0.06、2K 中 0.08；編輯每張輸入圖另加 0.01 |
+| grok-imagine-image-quality | 0.05 美元 | 1K 0.05～2K 0.07 |
+| grok-imagine-image（初代） | 0.02 美元 | |
+
+- 能編輯：用文字指令改圖，一次最多 5 張參考圖（可以拿來保持長相）。官方文件沒提遮罩，要自己把遮罩外蓋回原圖。
+- 內容審查：官方只寫「生成的內容要經過內容政策審查、不拿來訓練」。一般認為 xAI 比 Google、OpenAI 寬鬆，但 API 實際的界線要自己試。
+- 沒有批次折扣。
+
 ## 來源
 
 - [neilsonnn/image-blaster](https://github.com/neilsonnn/image-blaster)：`README.md`、`.claude/skills/image-blast-uncover/SKILL.md`、`image-blast-plate/SKILL.md`、`image-blast-3d/SKILL.md`
 - 價錢（官方）：[Meshy API Pricing](https://docs.meshy.ai/en/api/pricing)、[Meshy plans](https://help.meshy.ai/en/articles/12062933-what-are-your-prices-and-plans-offered-and-do-you-have-monthly-annual-plans)、[Meshy API changelog](https://docs.meshy.ai/en/api/changelog)、[Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing)、[OpenAI API pricing](https://developers.openai.com/api/docs/pricing)、[OpenAI image generation guide](https://developers.openai.com/api/docs/guides/image-generation)、[Tencent Hunyuan Global 3D API](https://www.tencentcloud.com/techpedia/148311?lang=en)
 - 新模型：[Tripo P2.0](https://finance.yahoo.com/technology/ai/articles/tripo-ai-releases-latest-model-032200541.html)、[Tripo H3.1 / P1.0 (GDC 2026)](https://www.prnewswire.com/news-releases/tripo-ai-debuts-production-grade-native-3d-diffusion-at-gdc-2026-302708371.html)、[Meshy 7](https://finance.yahoo.com/technology/ai/articles/meshy-releases-meshy-7-foundation-150000321.html)、[Hunyuan 3D v3.1 Pro](https://layer.ai/models/tencent-hunyuan3d-v3-1-pro)、[Hunyuan 3D open source vs API](https://www.tencentcloud.com/techpedia/148276?lang=en)
+- 等待的方案（官方）：[Gemini Batch API](https://ai.google.dev/gemini-api/docs/batch-mode)、[Gemini Flex inference](https://ai.google.dev/gemini-api/docs/flex-inference)、[OpenAI Batch API](https://developers.openai.com/api/docs/guides/batch)、[xAI API Pricing](https://docs.x.ai/developers/pricing)、[xAI image generation](https://docs.x.ai/docs/guides/image-generations)、[xAI models](https://docs.x.ai/docs/models)
+- Grok 圖像（第三方）：[Grok Imagine Image 2.0 on OpenRouter](https://openrouter.ai/x-ai/grok-imagine-image-2.0)、[Grok Imagine Image Quality on OpenRouter](https://openrouter.ai/x-ai/grok-imagine-image-quality)
 - 價錢（第三方）：、[Meshy credits guide](https://www.meshy.ai/tutorials/meshy-credits-guide)、[Meshy API pricing explained](https://meshyiai.com/api-pricing/)、[Tripo pricing](https://developers.tripo3d.ai/en/pricing)、[Tripo credits guide](https://www.tripo3d.ai/getting-started/zero-to-3d-getting-started-credits-pricing-guide)、[Hunyuan 3D on fal](https://fal.ai/hunyuan-3d)、[Hunyuan 3D Pro image-to-3D on fal](https://fal.ai/models/fal-ai/hunyuan-3d/v3.1/pro/image-to-3d)、[Nano Banana pricing](https://benchlm.ai/media-pricing/nano-banana)、[Nano Banana Pro pricing](https://www.pixmind.io/posts/nano-banana-pro-pricing-guide-2026)、[GPT Image 2 pricing](https://aireiter.com/blog/gpt-image-2-api-pricing)、[GPT Image 2 per-image breakdown](https://www.hiapi.ai/en/blog/gpt-image-2-api-pricing)
