@@ -10,3 +10,5 @@ art_work/
 # never: keys, passwords, signing files
 *.keystore
 .env
+# Claude Code subagent worktrees (temporary checkouts of other branches)
+.claude/worktrees/
