@@ -34,36 +34,43 @@
 
 **對 3D 方向的補充：** 它呼叫 Meshy 的設定裡有「綁骨架」和「套動作」的選項（以 1.7 公尺高的人形綁），也就是**雲端有現成的「圖片 → 有骨架、會動的 3D 角色」服務**，不受我們 16 GB 顯示卡的限制。混元 3D 新版（3.x）沒有公開，但能透過 FAL 用。價錢沒查。
 
-## 價錢（2026-10-04 查）
+## 最新模型和官方價目（2026-10-04 查官方頁）
 
-除了 Meshy 的點數表來自官方文件，其他多是第三方整理的數字，買之前要到官方頁再確認。
+**圖轉 3D**
 
-**圖轉 3D 角色（含綁骨架、套動作）**
+| 服務 | 最新模型 | 官方價格 |
+|---|---|---|
+| Meshy | Meshy 7.1（2026-09；7 是 2026-08） | 點數：圖轉 3D 只有網格 20、加 2K/4K 貼圖 30、8K 35；幾何 2K/4K 精度另加 5；重拓樸 5；**綁骨架 5；動作每個 3**（一次最多 10 個）。方案：免費 0 美元 100 點（作品是 CC BY 4.0，要標出處，不能用 API）；Pro 20 美元 1,000 點；Premium 40 美元 3,000 點；Ultra 100 美元 8,000 點（付費方案有 API、作品可私有）；Studio 每席 70 美元起（5,500 點）。新訂閱首月半價 |
+| Tripo | P2.0（2026-09-21，原生四邊形網格，三角面最多 5 萬）；H3.1、P1.0（2026-03） | 1 點 = 0.01 美元。圖轉 3D 只有網格 20、有貼圖 30；高清貼圖 +10、超清 +20、高清幾何 +20、四邊形 +5、拆零件 +20；**綁骨架 25；動作每個 10**；骨架檢查免費 |
+| 混元 3D（騰訊雲國際版官方） | 3.1 Pro（2026-07）；3.0、3.1、2.5 不公開，只能用 API；公開可下載的是 2.x（2.1 要 24 GB 顯示卡） | 點數：一般 25、低多邊形 30、只有幾何 15、快速版 15；**綁骨架 10**（輸出帶骨架的 FBX）；沒有動作。點數包 15～1,350 美元，每點 0.0135～0.015 美元；新用戶送 1,000 點（約 40 次） |
+| 混元 3D（FAL 代理） | 3.1 Pro／快速版 | Pro 0.375 美元、快速版 0.225 美元；材質 +0.15、拆零件 +0.45、智慧拓樸 +0.75 |
 
-| 服務 | 圖轉 3D（有貼圖） | 綁骨架 | 每個動作 | 一個角色加 10 個動作 |
-|---|---|---|---|---|
-| Meshy | 30 點 | 5 點 | 3 點 | 65 點，約 1.3 美元（照 Pro 方案每月 20 美元 1,000 點換算） |
-| Tripo | 30 點 | 25 點 | 10 點 | 155 點，約 1.6 美元（1 點 = 0.01 美元；新用戶送 2,000 點） |
-| 混元 3D 3.1（FAL） | 0.375 美元（快速版 0.225）；材質加 0.15、拆零件加 0.45 | 沒有 | 沒有 | 只有模型，約 0.5–1 美元 |
+**圖像編輯**
 
-- Meshy 的點數：官方文件寫綁骨架 5 點、動作每個 3 點；有些介紹文章說免費，以官方為準。點數換美元的比例官方文件沒寫，上表用介紹文章的 Pro 方案換算。
-- Tripo 的網頁方案：專業版每月 49.9 美元 3,000 點、高級版 139.9 美元 8,000 點。
-- 輸出的商用授權各方案不同，沒查。
+| 服務 | 模型 | 官方價格（每張） |
+|---|---|---|
+| Google Gemini | **3.1 Flash Lite Image**（最新） | 1K 約 0.034 美元；批次 0.017 |
+| | 3.1 Flash Image（nano-banana 2） | 0.5K 0.045、1K 0.067、2K 0.101、4K 0.151 美元；批次約一半 |
+| | 3 Pro Image（nano-banana Pro） | 1K／2K 0.134、4K 0.24 美元 |
+| | 2.5 Flash Image（初代） | **2026-10-02 已停用** |
+| | 都沒有免費額度 | |
+| OpenAI | **GPT Image 2.5**（最新，分 Sunburst：編輯精準；Flare：快、日常用） | 按字詞單位計價：文字輸入每百萬 5 美元、圖片輸入 8 美元、圖片輸出 30 美元（跟 GPT Image 2 一樣）。官方沒有列每張價格；第三方估每張約 0.01～0.06 美元，有參考圖的編輯貴 2～3 倍 |
 
-**圖像編輯（做物件參考圖、清底圖）**
+**一個角色加 10 個動作，照官方點數算：**
+- Meshy：30＋5＋30 = 65 點。Pro 方案（每點 0.02 美元）約 1.3 美元；Ultra（每點 0.0125）約 0.8 美元。
+- Tripo：30＋25＋100 = 155 點 = 1.55 美元。
+- 混元 3D 官方：25＋10 = 35 點，約 0.5 美元，但沒有動作（要自己套）。
 
-| 模型 | 每張 |
-|---|---|
-| Gemini 2.5 Flash Image（初代 nano-banana） | 0.039 美元（批次 0.0195） |
-| Gemini 3.1 Flash Image（nano-banana 2） | 1K 0.067、2K 0.101、4K 0.151 美元 |
-| Gemini 3 Pro Image（nano-banana Pro） | 1K／2K 0.134、4K 0.24 美元；FAL 上編輯每次 0.15 |
-| GPT Image 2 | 依解析度和服務商約 0.01–0.06 美元；有參考圖的編輯會貴 2–3 倍 |
+**一張立繪的物件迴圈（約 90 次編輯）：** Gemini 3.1 Flash Lite 1K 約 3 美元；3.1 Flash 2K 約 9 美元；3 Pro 約 12 美元。
 
-**換算成我們的用量（估計）：**
-- 一張立繪的物件迴圈：約 30 個物件 × 3 張 ≈ 90 次編輯。用 Gemini 3.1 Flash 2K 約 9 美元，用 Pro 約 12 美元。
-- 一個 3D 角色加 10 個動作：Meshy 或 Tripo 約 1.5 美元，但動漫角色的品質不知道，要先試。
+**注意：**
+- Meshy 的方案價格在官方說明頁；點數表在官方 API 文件。Tripo 的「新 API 用戶送 2,000 點」只在第三方文章看到，官方價目頁沒寫。
+- 輸出的商用授權：Meshy 免費方案是 CC BY 4.0（要標出處），付費方案可私有；其他家沒查。
+- 便宜不代表能用：三家對動漫角色的品質都還不知道，要先試。
 
 ## 來源
 
 - [neilsonnn/image-blaster](https://github.com/neilsonnn/image-blaster)：`README.md`、`.claude/skills/image-blast-uncover/SKILL.md`、`image-blast-plate/SKILL.md`、`image-blast-3d/SKILL.md`
-- 價錢：[Meshy API Pricing（官方）](https://docs.meshy.ai/en/api/pricing)、[Meshy credits guide](https://www.meshy.ai/tutorials/meshy-credits-guide)、[Meshy API pricing explained](https://meshyiai.com/api-pricing/)、[Tripo pricing](https://developers.tripo3d.ai/en/pricing)、[Tripo credits guide](https://www.tripo3d.ai/getting-started/zero-to-3d-getting-started-credits-pricing-guide)、[Hunyuan 3D on fal](https://fal.ai/hunyuan-3d)、[Hunyuan 3D Pro image-to-3D on fal](https://fal.ai/models/fal-ai/hunyuan-3d/v3.1/pro/image-to-3d)、[Nano Banana pricing](https://benchlm.ai/media-pricing/nano-banana)、[Nano Banana Pro pricing](https://www.pixmind.io/posts/nano-banana-pro-pricing-guide-2026)、[GPT Image 2 pricing](https://aireiter.com/blog/gpt-image-2-api-pricing)、[GPT Image 2 per-image breakdown](https://www.hiapi.ai/en/blog/gpt-image-2-api-pricing)
+- 價錢（官方）：[Meshy API Pricing](https://docs.meshy.ai/en/api/pricing)、[Meshy plans](https://help.meshy.ai/en/articles/12062933-what-are-your-prices-and-plans-offered-and-do-you-have-monthly-annual-plans)、[Meshy API changelog](https://docs.meshy.ai/en/api/changelog)、[Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing)、[OpenAI API pricing](https://developers.openai.com/api/docs/pricing)、[OpenAI image generation guide](https://developers.openai.com/api/docs/guides/image-generation)、[Tencent Hunyuan Global 3D API](https://www.tencentcloud.com/techpedia/148311?lang=en)
+- 新模型：[Tripo P2.0](https://finance.yahoo.com/technology/ai/articles/tripo-ai-releases-latest-model-032200541.html)、[Tripo H3.1 / P1.0 (GDC 2026)](https://www.prnewswire.com/news-releases/tripo-ai-debuts-production-grade-native-3d-diffusion-at-gdc-2026-302708371.html)、[Meshy 7](https://finance.yahoo.com/technology/ai/articles/meshy-releases-meshy-7-foundation-150000321.html)、[Hunyuan 3D v3.1 Pro](https://layer.ai/models/tencent-hunyuan3d-v3-1-pro)、[Hunyuan 3D open source vs API](https://www.tencentcloud.com/techpedia/148276?lang=en)
+- 價錢（第三方）：、[Meshy credits guide](https://www.meshy.ai/tutorials/meshy-credits-guide)、[Meshy API pricing explained](https://meshyiai.com/api-pricing/)、[Tripo pricing](https://developers.tripo3d.ai/en/pricing)、[Tripo credits guide](https://www.tripo3d.ai/getting-started/zero-to-3d-getting-started-credits-pricing-guide)、[Hunyuan 3D on fal](https://fal.ai/hunyuan-3d)、[Hunyuan 3D Pro image-to-3D on fal](https://fal.ai/models/fal-ai/hunyuan-3d/v3.1/pro/image-to-3d)、[Nano Banana pricing](https://benchlm.ai/media-pricing/nano-banana)、[Nano Banana Pro pricing](https://www.pixmind.io/posts/nano-banana-pro-pricing-guide-2026)、[GPT Image 2 pricing](https://aireiter.com/blog/gpt-image-2-api-pricing)、[GPT Image 2 per-image breakdown](https://www.hiapi.ai/en/blog/gpt-image-2-api-pricing)
