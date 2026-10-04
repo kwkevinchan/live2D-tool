@@ -8,5 +8,6 @@
 | [02_See_through.md](02_See_through.md) | See-through（我們用的拆層） | 補被擋住的地方是從 Live2D 模型學的，只會補「一小圈」；輸入越像直播角色越好 |
 | [03_Live2D_Industry.md](03_Live2D_Industry.md) | 業界人工做法 | 先畫為動而畫的分層原稿，再綁定；Live2D 動作本來就小，全身大動作業界用 Spine |
 | [04_Image_to_3D.md](04_Image_to_3D.md) | 圖片轉 3D（動漫） | 不用猜被擋住的部分、任何動作都行；但像不像原畫、細節、顯示卡是代價 |
+| [05_Mesh_Avatar_Studio.md](05_Mesh_Avatar_Studio.md) | Mesh Avatar Studio（程式助手做的網格角色） | 動原圖本身、只拆必要的幾塊、小洞用確定的方法補：用小動作避開延伸，畫質就是原圖的 |
 
 討論的結論之後寫在這裡。
