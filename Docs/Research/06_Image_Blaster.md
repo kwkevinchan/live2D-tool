@@ -34,6 +34,36 @@
 
 **對 3D 方向的補充：** 它呼叫 Meshy 的設定裡有「綁骨架」和「套動作」的選項（以 1.7 公尺高的人形綁），也就是**雲端有現成的「圖片 → 有骨架、會動的 3D 角色」服務**，不受我們 16 GB 顯示卡的限制。混元 3D 新版（3.x）沒有公開，但能透過 FAL 用。價錢沒查。
 
+## 價錢（2026-10-04 查）
+
+除了 Meshy 的點數表來自官方文件，其他多是第三方整理的數字，買之前要到官方頁再確認。
+
+**圖轉 3D 角色（含綁骨架、套動作）**
+
+| 服務 | 圖轉 3D（有貼圖） | 綁骨架 | 每個動作 | 一個角色加 10 個動作 |
+|---|---|---|---|---|
+| Meshy | 30 點 | 5 點 | 3 點 | 65 點，約 1.3 美元（照 Pro 方案每月 20 美元 1,000 點換算） |
+| Tripo | 30 點 | 25 點 | 10 點 | 155 點，約 1.6 美元（1 點 = 0.01 美元；新用戶送 2,000 點） |
+| 混元 3D 3.1（FAL） | 0.375 美元（快速版 0.225）；材質加 0.15、拆零件加 0.45 | 沒有 | 沒有 | 只有模型，約 0.5–1 美元 |
+
+- Meshy 的點數：官方文件寫綁骨架 5 點、動作每個 3 點；有些介紹文章說免費，以官方為準。點數換美元的比例官方文件沒寫，上表用介紹文章的 Pro 方案換算。
+- Tripo 的網頁方案：專業版每月 49.9 美元 3,000 點、高級版 139.9 美元 8,000 點。
+- 輸出的商用授權各方案不同，沒查。
+
+**圖像編輯（做物件參考圖、清底圖）**
+
+| 模型 | 每張 |
+|---|---|
+| Gemini 2.5 Flash Image（初代 nano-banana） | 0.039 美元（批次 0.0195） |
+| Gemini 3.1 Flash Image（nano-banana 2） | 1K 0.067、2K 0.101、4K 0.151 美元 |
+| Gemini 3 Pro Image（nano-banana Pro） | 1K／2K 0.134、4K 0.24 美元；FAL 上編輯每次 0.15 |
+| GPT Image 2 | 依解析度和服務商約 0.01–0.06 美元；有參考圖的編輯會貴 2–3 倍 |
+
+**換算成我們的用量（估計）：**
+- 一張立繪的物件迴圈：約 30 個物件 × 3 張 ≈ 90 次編輯。用 Gemini 3.1 Flash 2K 約 9 美元，用 Pro 約 12 美元。
+- 一個 3D 角色加 10 個動作：Meshy 或 Tripo 約 1.5 美元，但動漫角色的品質不知道，要先試。
+
 ## 來源
 
 - [neilsonnn/image-blaster](https://github.com/neilsonnn/image-blaster)：`README.md`、`.claude/skills/image-blast-uncover/SKILL.md`、`image-blast-plate/SKILL.md`、`image-blast-3d/SKILL.md`
+- 價錢：[Meshy API Pricing（官方）](https://docs.meshy.ai/en/api/pricing)、[Meshy credits guide](https://www.meshy.ai/tutorials/meshy-credits-guide)、[Meshy API pricing explained](https://meshyiai.com/api-pricing/)、[Tripo pricing](https://developers.tripo3d.ai/en/pricing)、[Tripo credits guide](https://www.tripo3d.ai/getting-started/zero-to-3d-getting-started-credits-pricing-guide)、[Hunyuan 3D on fal](https://fal.ai/hunyuan-3d)、[Hunyuan 3D Pro image-to-3D on fal](https://fal.ai/models/fal-ai/hunyuan-3d/v3.1/pro/image-to-3d)、[Nano Banana pricing](https://benchlm.ai/media-pricing/nano-banana)、[Nano Banana Pro pricing](https://www.pixmind.io/posts/nano-banana-pro-pricing-guide-2026)、[GPT Image 2 pricing](https://aireiter.com/blog/gpt-image-2-api-pricing)、[GPT Image 2 per-image breakdown](https://www.hiapi.ai/en/blog/gpt-image-2-api-pricing)
